@@ -62,6 +62,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* SIDEBAR */
 .sidebar{width:240px;min-width:240px;border-right:1px solid var(--brd2);background:var(--bg2);padding:16px 14px;overflow-y:auto;}
 .sidebar.hidden{display:none;}
+.hidden{display:none!important;}
 .side-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t6);margin-bottom:8px;}
 .side-btn{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:1px solid transparent;background:transparent;color:var(--t4);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fb);border-radius:4px;margin-bottom:2px;text-align:left;transition:all .1s;}
 .side-btn:hover{background:rgba(255,255,255,.03);}
@@ -307,12 +308,16 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
 <!-- ═══ HEADER ═══ -->
 <div class="hdr">
   <div class="hdr-l">
-    <svg width="26" height="26" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
-    <span class="hdr-brand">DEALERSHIP ACCELERATOR</span>
+    <a href="index.html" style="display:flex;align-items:center;text-decoration:none;cursor:pointer" title="Back to Home">
+      <svg width="26" height="26" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
+      <span class="hdr-brand" style="margin-left:12px">DEALERSHIP ACCELERATOR</span>
+    </a>
     <div class="hdr-div"></div>
     <span class="hdr-sub">Calendar</span>
   </div>
   <div class="hdr-r">
+    <a href="index.html" class="btn" title="Home">🏠 Home</a>
+    <div class="hdr-div"></div>
     <div class="view-tog">
       <button class="view-btn on" data-view="month" onclick="setView('month')">Month</button>
       <button class="view-btn" data-view="week" onclick="setView('week')">Week</button>
@@ -320,8 +325,8 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
     </div>
     <div class="hdr-div"></div>
     <button class="btn btn-filter on" id="filterToggle" onclick="toggleSidebar()">☰ Filters</button>
-    <button class="btn" onclick="openTeamModal()">👥 Team</button>
-    <button class="btn" onclick="openIntegrationsModal()">🔌 Integrations</button>
+    <button class="btn" id="btnTeam" onclick="openTeamModal()" style="display:none">👥 Team</button>
+    <button class="btn" id="btnInteg" onclick="openIntegrationsModal()" style="display:none">🔌 Integrations</button>
     <div class="hdr-div"></div>
     <span style="font-size:10px;color:var(--t5);font-family:var(--fm)" id="userEmail"></span>
     <button class="btn" onclick="doLogout()">Logout</button>
@@ -461,7 +466,17 @@ async function enterApp(){
   document.getElementById('userEmail').textContent = _currentUser.email;
   document.getElementById('app').style.display = 'block';
 
+  // Show admin-only buttons
+  if(_isAdmin){
+    document.getElementById('btnTeam').style.display='';
+    document.getElementById('btnInteg').style.display='';
+  }
+
   await loadState();
+
+  // Default: filter to only show your own events
+  state.filterUsers = [_currentUser.id];
+
   render();
 }
 
@@ -469,12 +484,8 @@ async function doLogout(){
   await _sb.auth.signOut();
   _currentUser = null;
   _isAdmin = false;
-  state.events = [];
-  state.users = [];
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('loginLoading').style.display = 'none';
+  // Redirect to welcome hub
+  window.location.href = 'index.html';
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -805,6 +816,9 @@ let state = {
 };
 
 // ─── PERSISTENCE (Supabase) ───
+// Capitalize first letter of each word
+function capName(s){if(!s)return'';return s.replace(/\b\w/g,c=>c.toUpperCase());}
+
 // Maps JS camelCase ↔ DB snake_case
 function evtToRow(e){
   return {
@@ -830,7 +844,8 @@ function rowToEvt(r){
     outcome:r.outcome||"", zoomLink:r.zoom_link,
     attendees:r.attendees||[], rescheduledFrom:r.rescheduled_from,
     rescheduledTo:r.rescheduled_to, gcalSynced:r.gcal_synced,
-    invitesSent:r.invites_sent, closeActivity:r.close_activity
+    invitesSent:r.invites_sent, closeActivity:r.close_activity,
+    createdBy:r.created_by
   };
 }
 
@@ -845,7 +860,7 @@ async function loadState(){
     if(prErr)throw prErr;
     state.users=(profiles||[]).map(p=>({
       id:p.id,
-      name:p.display_name||p.email.split('@')[0],
+      name:capName(p.display_name||p.email.split('@')[0]),
       role:p.calendar_role||'Closer',
       color:p.calendar_color||(p.is_admin?'#D3FB40':'#3b82f6'),
       email:p.email,
@@ -944,16 +959,47 @@ function renderSidebar(){
   document.getElementById("typeFilters").innerHTML=yf;
   document.getElementById("clearTypeFilter").style.display=state.filterTypes.length?"block":"none";
 
-  // Stats
+  // Stats — always YOUR events only
   const ws=getWeekStart(new Date()),we=new Date(ws);we.setDate(we.getDate()+6);
-  const weekEvts=state.events.filter(e=>{const ed=parseDate(e.date);return ed>=ws&&ed<=we;});
-  const byType={};weekEvts.forEach(e=>{byType[e.type]=(byType[e.type]||0)+1;});
-  let stats=`<div class="side-label" style="margin-bottom:8px">This Week</div>
-    <div class="stats-num">${weekEvts.length}</div><div class="stats-sub">scheduled events</div>`;
-  Object.entries(byType).forEach(([type,count])=>{
-    const t=EVENT_TYPES.find(x=>x.id===type);
-    if(t)stats+=`<div class="stats-row"><span class="stats-row-l">${t.label}</span><span class="stats-row-v" style="color:${t.color}">${count}</span></div>`;
+  const myId=_currentUser?.id;
+  const myWeekEvts=state.events.filter(e=>{
+    const ed=parseDate(e.date);
+    if(ed<ws||ed>we)return false;
+    return e.closerId===myId||e.sdrId===myId||e.userId===myId;
   });
+  // Role-based type filtering
+  const SALES_TYPES=new Set(["demo","led","sync"]);
+  const AM_TYPES=new Set(["setup","mgr-training","team-training","launch","1wk-checkin","3wk-checkin","1on1"]);
+  let relevantTypes;
+  if(_isAdmin||_calendarRole==='Admin')relevantTypes=null; // show all
+  else if(_calendarRole==='AM')relevantTypes=AM_TYPES;
+  else relevantTypes=SALES_TYPES; // Closer, Setter
+
+  const byType={};
+  myWeekEvts.forEach(e=>{
+    if(relevantTypes&&!relevantTypes.has(e.type))return;
+    byType[e.type]=(byType[e.type]||0)+1;
+  });
+  const relevantCount=Object.values(byType).reduce((a,b)=>a+b,0);
+
+  let stats=`<div class="side-label" style="margin-bottom:8px">Your Week</div>
+    <div class="stats-num">${relevantCount}</div>
+    <div class="stats-sub">scheduled events</div>
+    <div style="font-size:9px;color:var(--t6);margin-top:2px;font-style:italic">Your calendar only</div>`;
+
+  if(relevantCount>0){
+    stats+=`<div style="margin-top:8px;cursor:pointer;display:flex;align-items:center;gap:4px" onclick="document.getElementById('statsBreakdown').classList.toggle('hidden')">
+      <span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--t5)">Breakdown</span>
+      <span style="font-size:8px;color:var(--t6)">▼</span>
+    </div>
+    <div id="statsBreakdown" class="hidden">`;
+    Object.entries(byType).sort((a,b)=>b[1]-a[1]).forEach(([type,count])=>{
+      const t=EVENT_TYPES.find(x=>x.id===type);
+      if(t)stats+=`<div class="stats-row"><span class="stats-row-l">${t.label}</span><span class="stats-row-v" style="color:${t.color}">${count}</span></div>`;
+    });
+    stats+=`</div>`;
+  }
+
   document.getElementById("statsBox").innerHTML=stats;
 }
 
@@ -1203,7 +1249,7 @@ function showEventModal(evt){
       ${isEdit?`<div class="field"><div class="field-label">Outcome</div><select class="fi" id="mOutcome">${outcomeOpts}</select></div>`:""}
     </div>
     <div class="modal-foot">
-      <div>${isEdit?`<button class="btn btn-red" onclick="deleteEvent('${evt.id}')">Delete</button>`:""}</div>
+      <div>${isEdit&&canDeleteEvent(evt)?`<button class="btn btn-red" onclick="deleteEvent('${evt.id}')">Delete</button>`:""}</div>
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="closeModal()">Cancel</button>
         <button class="btn btn-acc" onclick="saveEvent('${evt.id||""}')">${isEdit?"Save Changes":"Create Event"}</button>
@@ -1279,7 +1325,16 @@ function saveEvent(existingId){
   saveState(evtId);closeModal();render();
 }
 
+function canDeleteEvent(evt){
+  if(_isAdmin)return true;
+  if(!_currentUser)return false;
+  return evt.createdBy===_currentUser.id;
+}
+
 function deleteEvent(id){
+  const evt=state.events.find(e=>e.id===id);
+  if(!evt)return;
+  if(!canDeleteEvent(evt)){alert("You can only delete events you created.");return;}
   if(!confirm("Delete this event?"))return;
   state.events=state.events.filter(e=>e.id!==id);
   deleteEvent_db(id);
@@ -1365,7 +1420,7 @@ function showDetail(id){
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-red" onclick="deleteEvent('${evt.id}')">Delete</button>
+      ${canDeleteEvent(evt)?`<button class="btn btn-red" onclick="deleteEvent('${evt.id}')">Delete</button>`:`<div></div>`}
       <button class="btn btn-acc" onclick="editFromDetail('${evt.id}')">Edit</button>
     </div>
   </div></div>`;
