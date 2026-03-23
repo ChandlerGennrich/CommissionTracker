@@ -156,6 +156,45 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
 .user-email{font-family:var(--fm);font-size:9px;color:var(--t3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .btn-logout{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t3);cursor:pointer;transition:all .2s;}
 .btn-logout:hover{border-color:var(--red);color:var(--red);background:var(--redD);}
+
+/* ─── ADMIN DASHBOARD ─── */
+.admin-wrap{min-height:100vh;background:var(--bg0);padding:0;}
+.admin-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--brd);background:var(--bg1);position:sticky;top:0;z-index:100;}
+.admin-hdr-l{display:flex;align-items:center;gap:14px;}
+.admin-hdr-l img{height:22px;}
+.admin-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);}
+.admin-title span{color:var(--orange);}
+.admin-hdr-r{display:flex;align-items:center;gap:8px;}
+.admin-body{max-width:900px;margin:0 auto;padding:24px;}
+.admin-section-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;}
+.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.admin-stat{background:var(--bg2);border:1px solid var(--brd);padding:14px 16px;}
+.admin-stat-label{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);font-weight:600;margin-bottom:4px;}
+.admin-stat-val{font-family:var(--fm);font-size:20px;font-weight:600;color:var(--t1);}
+.admin-stat-val.g{color:var(--acc);}
+.admin-user-list{display:flex;flex-direction:column;gap:6px;}
+.admin-user{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--brd);padding:12px 16px;cursor:pointer;transition:all .15s;}
+.admin-user:hover{border-color:var(--acc);background:var(--bgH);}
+.admin-user-left{display:flex;align-items:center;gap:12px;}
+.admin-user-avatar{width:32px;height:32px;background:var(--bgI);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:12px;font-weight:600;color:var(--acc);text-transform:uppercase;}
+.admin-user-info{display:flex;flex-direction:column;gap:2px;}
+.admin-user-email{font-size:12px;font-weight:500;color:var(--t1);}
+.admin-user-meta{font-size:9px;color:var(--t3);}
+.admin-user-meta span{color:var(--acc);}
+.admin-user-right{display:flex;align-items:center;gap:10px;}
+.admin-badge{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;background:rgba(240,150,10,.1);color:var(--orange);border:1px solid rgba(240,150,10,.2);}
+.admin-badge.rep{background:var(--accG);color:var(--acc);border-color:rgba(62,207,74,.2);}
+.admin-toggle-btn{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t3);cursor:pointer;transition:all .2s;}
+.admin-toggle-btn:hover{border-color:var(--orange);color:var(--orange);}
+.admin-view-btn{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t2);cursor:pointer;transition:all .2s;}
+.admin-view-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--accG);}
+.viewing-banner{display:none;align-items:center;justify-content:space-between;padding:8px 24px;background:rgba(240,150,10,.08);border-bottom:1px solid rgba(240,150,10,.2);}
+.viewing-banner.show{display:flex;}
+.viewing-text{font-size:10px;font-weight:600;color:var(--orange);letter-spacing:.04em;}
+.viewing-text b{color:var(--t1);}
+.btn-back{font-family:var(--fb);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(240,150,10,.3);background:rgba(240,150,10,.08);color:var(--orange);cursor:pointer;transition:all .2s;}
+.btn-back:hover{background:rgba(240,150,10,.15);border-color:var(--orange);}
+@media(max-width:700px){.admin-stats{grid-template-columns:1fr;}.admin-body{padding:16px;}.admin-user{flex-wrap:wrap;gap:8px;}}
 </style>
 </head>
 <body>
@@ -184,8 +223,37 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
   </div>
 </div>
 
+<!-- ─── ADMIN DASHBOARD (hidden until admin auth) ─── -->
+<div id="admin-screen" style="display:none" class="admin-wrap">
+  <div class="admin-hdr">
+    <div class="admin-hdr-l">
+      <img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA">
+      <div class="hdr-d"></div>
+      <div class="admin-title">Admin <span>Dashboard</span></div>
+    </div>
+    <div class="admin-hdr-r">
+      <span class="user-email" id="adminEmail"></span>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-stats">
+      <div class="admin-stat"><div class="admin-stat-label">Total Users</div><div class="admin-stat-val" id="adStatUsers">0</div></div>
+      <div class="admin-stat"><div class="admin-stat-label">Admins</div><div class="admin-stat-val" id="adStatAdmins">0</div></div>
+      <div class="admin-stat"><div class="admin-stat-label">Reps</div><div class="admin-stat-val g" id="adStatReps">0</div></div>
+    </div>
+    <div class="admin-section-title">All Users</div>
+    <div class="admin-user-list" id="adminUserList"></div>
+  </div>
+</div>
+
 <!-- ─── APP (hidden until auth) ─── -->
 <div id="app" style="display:none">
+
+<div class="viewing-banner" id="viewingBanner">
+  <div class="viewing-text">Viewing tracker for <b id="viewingName">—</b></div>
+  <button class="btn-back" onclick="backToAdmin()">&#8592; Back to Dashboard</button>
+</div>
 
 <div class="hdr">
   <div class="hdr-l">
@@ -198,6 +266,7 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
   <div class="hdr-r">
     <div class="user-bar">
       <span class="user-email" id="userEmail"></span>
+      <button class="btn" id="btnDashboard" style="display:none" onclick="backToAdmin()">Dashboard</button>
       <button class="btn-logout" onclick="doLogout()">Logout</button>
     </div>
     <button class="btn" onclick="clearTab()">Clear Tab</button>
@@ -466,6 +535,9 @@ const _sb = window.supabase.createClient(
   'sb_publishable_kpKWMM2uJgrGSqS_W1CKLQ_uufpskfq'
 );
 let _currentUser = null;
+let _isAdmin = false;
+let _viewingUserId = null; // null = own tracker, set = viewing someone else
+let _viewingUserEmail = null;
 
 // ─── AUTH ───
 let _isSignup = false;
@@ -504,7 +576,7 @@ async function doLogin(){
         errEl.textContent = 'An account with this email already exists.';
         errEl.style.display = 'block';
       } else {
-        msgEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+        msgEl.textContent = 'Account created! You can now sign in.';
         msgEl.style.display = 'block';
         _isSignup = false;
         document.getElementById('loginTitle').textContent = 'Sign In';
@@ -525,7 +597,6 @@ async function doLogin(){
   btn.textContent = _isSignup ? 'Create Account' : 'Sign In';
 }
 
-// Enter on password field
 document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   document.getElementById('loginEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
@@ -542,20 +613,39 @@ async function checkSession(){
   }
 }
 
+async function checkAdmin(){
+  const { data } = await _sb.from('profiles').select('is_admin').eq('id', _currentUser.id).single();
+  _isAdmin = data?.is_admin === true;
+}
+
 async function enterApp(){
-  document.getElementById('userEmail').textContent = _currentUser.email;
-  await loadFromSupabase();
+  await checkAdmin();
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  init();
+
+  if(_isAdmin){
+    // Show admin dashboard
+    document.getElementById('adminEmail').textContent = _currentUser.email;
+    document.getElementById('admin-screen').style.display = 'block';
+    await loadAdminDashboard();
+  } else {
+    // Regular rep — straight to their tracker
+    document.getElementById('userEmail').textContent = _currentUser.email;
+    _viewingUserId = null;
+    await loadFromSupabase(_currentUser.id);
+    document.getElementById('app').style.display = 'block';
+    init();
+  }
 }
 
 async function doLogout(){
   await _sb.auth.signOut();
   _currentUser = null;
+  _isAdmin = false;
+  _viewingUserId = null;
   S = {};
   turboActivated = {};
   document.getElementById('app').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('loginForm').style.display = 'block';
   document.getElementById('loginLoading').style.display = 'none';
@@ -564,13 +654,107 @@ async function doLogout(){
   document.getElementById('loginMsg').style.display = 'none';
 }
 
+// ─── ADMIN DASHBOARD ───
+async function loadAdminDashboard(){
+  // Fetch all profiles
+  const { data: profiles } = await _sb.from('profiles').select('id, email, is_admin, created_at').order('created_at', { ascending: true });
+  if(!profiles) return;
+
+  // Fetch all commission data for summaries
+  const { data: allComm } = await _sb.from('commission_data').select('user_id, state, updated_at');
+
+  const commMap = {};
+  (allComm||[]).forEach(c => { commMap[c.user_id] = c; });
+
+  const admins = profiles.filter(p => p.is_admin).length;
+  const reps = profiles.length - admins;
+  document.getElementById('adStatUsers').textContent = profiles.length;
+  document.getElementById('adStatAdmins').textContent = admins;
+  document.getElementById('adStatReps').textContent = reps;
+
+  const list = document.getElementById('adminUserList');
+  list.innerHTML = '';
+  profiles.forEach(p => {
+    const initials = (p.email||'?').slice(0,2).toUpperCase();
+    const comm = commMap[p.id];
+    const hasData = comm && comm.state && Object.keys(comm.state).length > 0;
+    const updated = comm?.updated_at ? new Date(comm.updated_at).toLocaleDateString() : 'Never';
+    const isMe = p.id === _currentUser.id;
+
+    const div = document.createElement('div');
+    div.className = 'admin-user';
+    div.innerHTML =
+      '<div class="admin-user-left">'+
+        '<div class="admin-user-avatar">'+initials+'</div>'+
+        '<div class="admin-user-info">'+
+          '<div class="admin-user-email">'+esc(p.email)+(isMe?' <span style="color:var(--t3);font-size:9px">(you)</span>':'')+'</div>'+
+          '<div class="admin-user-meta">Last saved: '+updated+(hasData?' &middot; <span>Has data</span>':'')+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="admin-user-right">'+
+        '<span class="admin-badge'+(p.is_admin?'':' rep')+'">'+(p.is_admin?'Admin':'Rep')+'</span>'+
+        (!isMe?'<button class="admin-toggle-btn" data-uid="'+p.id+'" data-admin="'+(p.is_admin?'1':'0')+'" onclick="toggleAdmin(this)">'+(p.is_admin?'Remove Admin':'Make Admin')+'</button>':'')+
+        '<button class="admin-view-btn" onclick="viewUserTracker(\''+p.id+'\',\''+esc(p.email)+'\')">View Tracker</button>'+
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+async function toggleAdmin(btn){
+  const uid = btn.dataset.uid;
+  const wasAdmin = btn.dataset.admin === '1';
+  const newVal = !wasAdmin;
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  await _sb.from('profiles').update({ is_admin: newVal }).eq('id', uid);
+  await loadAdminDashboard();
+}
+
+async function viewUserTracker(userId, email){
+  _viewingUserId = userId;
+  _viewingUserEmail = email;
+  const isOwn = userId === _currentUser.id;
+
+  S = {};
+  turboActivated = {};
+  await loadFromSupabase(userId);
+
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('userEmail').textContent = email;
+  document.getElementById('btnDashboard').style.display = 'inline-block';
+
+  // Show viewing banner if not own tracker
+  const banner = document.getElementById('viewingBanner');
+  if(!isOwn){
+    document.getElementById('viewingName').textContent = email;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  init();
+}
+
+function backToAdmin(){
+  // Reset and go back to admin dashboard
+  S = {};
+  turboActivated = {};
+  _viewingUserId = null;
+  _viewingUserEmail = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('viewingBanner').classList.remove('show');
+  document.getElementById('admin-screen').style.display = 'block';
+  loadAdminDashboard();
+}
+
 // ─── PERSISTENCE (Supabase) ───
-async function loadFromSupabase(){
+async function loadFromSupabase(userId){
   try {
     const { data, error } = await _sb
       .from('commission_data')
       .select('state, turbo')
-      .eq('user_id', _currentUser.id)
+      .eq('user_id', userId)
       .single();
     if(data){
       S = data.state || {};
@@ -582,6 +766,9 @@ async function loadFromSupabase(){
 let _saveTimer;
 async function saveToSupabase(){
   if(!_currentUser) return;
+  // Only save if viewing own tracker
+  const saveId = _viewingUserId || _currentUser.id;
+  if(saveId !== _currentUser.id) return; // read-only for other users
   try {
     await _sb
       .from('commission_data')
@@ -602,9 +789,11 @@ function ldTurbo(){} // no-op, loaded async before init
 // ─── INIT ───
 function init(){
   ld();ldTurbo();
+  AY=2026;AT='j1'; // reset view state
   YEARS.forEach(y=>ensureYear(y));
-  // Year dropdown
+  // Year dropdown (clear first to prevent duplicates on re-init)
   const sel=document.getElementById('yrSel');
+  sel.innerHTML='';
   YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
   sel.value=AY;
   rTabs();rAll();
