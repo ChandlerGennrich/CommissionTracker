@@ -227,11 +227,12 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
 <div id="admin-screen" style="display:none" class="admin-wrap">
   <div class="admin-hdr">
     <div class="admin-hdr-l">
-      <img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA">
+      <a href="index.html" style="display:flex;align-items:center;text-decoration:none"><img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA"></a>
       <div class="hdr-d"></div>
       <div class="admin-title">Admin <span>Dashboard</span></div>
     </div>
     <div class="admin-hdr-r">
+      <a href="index.html" class="btn-logout" style="border-color:var(--brd);color:var(--t2);text-decoration:none;display:inline-block">🏠 Home</a>
       <span class="user-email" id="adminEmail"></span>
       <button class="btn-logout" onclick="doLogout()">Logout</button>
     </div>
@@ -257,7 +258,7 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
 
 <div class="hdr">
   <div class="hdr-l">
-    <img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA">
+    <a href="index.html" style="display:flex;align-items:center;text-decoration:none"><img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA"></a>
     <div class="hdr-d"></div>
     <div class="hdr-t">Commission <span>Tracker</span></div>
     <div class="hdr-d"></div>
@@ -265,6 +266,7 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
   </div>
   <div class="hdr-r">
     <div class="user-bar">
+      <a href="index.html" class="btn-logout" style="border-color:var(--brd);color:var(--t2);text-decoration:none;display:inline-block">🏠 Home</a>
       <span class="user-email" id="userEmail"></span>
       <button class="btn" id="btnDashboard" style="display:none" onclick="backToAdmin()">Dashboard</button>
       <button class="btn-logout" onclick="doLogout()">Logout</button>
@@ -642,15 +644,7 @@ async function doLogout(){
   _currentUser = null;
   _isAdmin = false;
   _viewingUserId = null;
-  S = {};
-  turboActivated = {};
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('admin-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('loginLoading').style.display = 'none';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginErr').style.display = 'none';
+  window.location.href = 'index.html';
   document.getElementById('loginMsg').style.display = 'none';
 }
 
