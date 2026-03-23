@@ -654,7 +654,7 @@ function showOutcomeConfirmed(evtId,outcome){
   </div></div>`;
 }
 
-function logDraftAndOpenClose(evtId){
+async function logDraftAndOpenClose(evtId){
   const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
   const draftNote=document.getElementById("ocDraftNote")?.value||"";
   // If Lead ID was entered inline (wasn't on event originally)
@@ -663,7 +663,19 @@ function logDraftAndOpenClose(evtId){
     evt.closeLeadId=inlineLeadId;
   }
   evt.closeActivity={logged:true,timestamp:new Date().toISOString(),note:draftNote};
-  saveState();
+  saveState(evtId);
+
+  // Log activity to Close CRM via Edge Function
+  if(evt.closeLeadId&&draftNote){
+    try{
+      const {data,error}=await _sb.functions.invoke('close-proxy',{
+        body:{action:'log_activity',lead_id:evt.closeLeadId,note:draftNote}
+      });
+      if(data?.success)evt.closeActivity.closeActivityId=data.activity_id;
+      if(error||data?.error)console.warn('Close log error:',data?.error||error);
+    }catch(e){console.warn('Close log failed:',e);}
+  }
+
   // Open Close contact record
   if(evt.closeLeadId){
     window.open(`https://app.close.com/lead/${evt.closeLeadId}/`,"_blank");
@@ -677,7 +689,7 @@ function logDraftLocal(evtId){
   const inlineLeadId=document.getElementById("ocLeadId")?.value.trim()||"";
   if(inlineLeadId&&!evt.closeLeadId)evt.closeLeadId=inlineLeadId;
   evt.closeActivity={logged:true,timestamp:new Date().toISOString(),note:draftNote};
-  saveState();closeModal();render();
+  saveState(evtId);closeModal();render();
 }
 
 function skipDraftActivity(evtId){
@@ -1394,7 +1406,7 @@ function showDetail(id){
       ${evt.attendees&&evt.attendees.length?`<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="detail-label">Attendees</span><div>${evt.attendees.map(a=>`<span class="attendee-chip">${esc(a)}</span>`).join("")}</div></div>`:""}
       ${evt.notes?`<div class="detail-notes">${esc(evt.notes)}</div>`:""}
       <div class="integ-section">
-        <div class="integ-section-title">Actions <span class="integ-badge mock">Mock Mode</span></div>
+        <div class="integ-section-title">Actions <span class="integ-badge live">Close Live</span></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="gcal-btn${evt.gcalSynced?" synced":""}" onclick="event.stopPropagation();mockGcalSync('${evt.id}')">${evt.gcalSynced?"✓ Synced to GCal":"📅 Push to Google Cal"}</button>
           ${evt.attendees&&evt.attendees.length?`<button class="gcal-btn" onclick="event.stopPropagation();mockSendInvites('${evt.id}')">📧 ${evt.invitesSent?"Resend":"Send"} Invites</button>`:""}
@@ -1544,42 +1556,58 @@ function saveIntegrations(){try{localStorage.setItem(INTEG_STORAGE_KEY,JSON.stri
 loadIntegrations();
 
 // ─── Step 9: Close Lead ID Lookup (Mock) ───
-function closeLookup(){
+async function closeLookup(){
   const leadId=document.getElementById("mCloseId")?.value.trim();
   if(!leadId){alert("Enter a Close Lead ID first");return;}
   const btn=document.getElementById("closeLookupBtn");
   const res=document.getElementById("closeLookupResult");
   if(!btn||!res)return;
   btn.classList.add("loading");btn.textContent="⏳ Looking up...";
-  // Simulate API delay
-  setTimeout(()=>{
+
+  try{
+    const {data,error}=await _sb.functions.invoke('close-proxy',{
+      body:{action:'lookup',lead_id:leadId}
+    });
     btn.classList.remove("loading");btn.textContent="🔍 Lookup";
-    if(!integrations.close.enabled){
-      // Mock contact data — in production this comes from Close API
-      // GET /api/v1/lead/{leadId}/ returns contacts[] with emails[]
-      const mockEmails=["rjay@edwardscdjr.com","gm@edwardscdjr.com","service@edwardscdjr.com"];
-      res.innerHTML=`<div style="font-size:10px;color:var(--orange);margin-top:4px">⚠ Close CRM not connected — showing mock data. <span style="cursor:pointer;text-decoration:underline" onclick="openIntegrationsModal()">Configure →</span></div>
-        <div class="lookup-result">🏢 <strong style="color:var(--t1)">Edwards CDJR</strong></div>
-        <div class="lookup-result">👤 <strong style="color:var(--t1)">Rjay Williamson</strong></div>
-        <div class="lookup-result">📧 <span style="color:var(--t3)">${mockEmails.length} email(s) found — added to attendees</span></div>`;
-      // Auto-fill mock data
-      const dealerEl=document.getElementById("mDealer");
-      const contactEl=document.getElementById("mContact");
-      if(dealerEl&&!dealerEl.value)dealerEl.value="Edwards CDJR";
-      if(contactEl&&!contactEl.value)contactEl.value="Rjay Williamson";
-      // Auto-populate attendee emails from Close contacts
-      mockEmails.forEach(email=>{
-        if(!modalAttendees.includes(email))modalAttendees.push(email);
-      });
-      refreshAttendeeList();
-    }else{
-      // When live: GET https://api.close.com/api/v1/lead/{leadId}/
-      // Response includes lead.contacts[].emails[].email
-      // Auto-populate from: data.contacts.flatMap(c => c.emails.map(e => e.email))
-      res.innerHTML=`<div style="font-size:10px;color:var(--cyan);margin-top:4px">🔗 Would fetch from Close API: /api/v1/lead/${esc(leadId)}/</div>
-        <div style="font-size:10px;color:var(--t5);margin-top:2px">Contact emails would auto-populate into attendees from lead.contacts[].emails[]</div>`;
+
+    if(error||data?.error){
+      res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ Lookup failed: ${esc(data?.error||error?.message||'Unknown error')}</div>`;
+      return;
     }
-  },800);
+
+    // Auto-fill dealership name
+    const dealerEl=document.getElementById("mDealer");
+    const contactEl=document.getElementById("mContact");
+    if(dealerEl&&!dealerEl.value&&data.display_name)dealerEl.value=data.display_name;
+
+    // Extract contacts and emails
+    const allEmails=[];
+    let firstContactName='';
+    (data.contacts||[]).forEach(c=>{
+      if(!firstContactName&&c.name)firstContactName=c.name;
+      (c.emails||[]).forEach(email=>{
+        if(!allEmails.includes(email))allEmails.push(email);
+      });
+    });
+    if(contactEl&&!contactEl.value&&firstContactName)contactEl.value=firstContactName;
+
+    // Auto-populate attendees
+    allEmails.forEach(email=>{
+      if(!modalAttendees.includes(email))modalAttendees.push(email);
+    });
+    refreshAttendeeList();
+
+    res.innerHTML=`<div class="lookup-result">🏢 <strong style="color:var(--t1)">${esc(data.display_name||'Unknown')}</strong></div>
+      ${firstContactName?`<div class="lookup-result">👤 <strong style="color:var(--t1)">${esc(firstContactName)}</strong></div>`:''}
+      <div class="lookup-result">📧 <span style="color:var(--t3)">${allEmails.length} email(s) found${allEmails.length?' — added to attendees':''}</span></div>
+      ${data.status?`<div class="lookup-result">📋 Status: <strong style="color:var(--t1)">${esc(data.status)}</strong></div>`:''}`;
+
+    tryAutoPopulateNotes();
+
+  }catch(err){
+    btn.classList.remove("loading");btn.textContent="🔍 Lookup";
+    res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ ${esc(err.message||'Connection failed')}</div>`;
+  }
 }
 
 // ─── Step 10: Log Draft Activity to Close (Mock) ───
