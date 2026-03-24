@@ -1805,7 +1805,7 @@ async function generateZoomLink(){
 
   try{
     const {data,error}=await _sb.functions.invoke('zoom-proxy',{
-      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:_currentUser?.email||'',start_time:startTime}
+      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:_currentUser?.email||'',start_time:startTime,attendees:modalAttendees.slice()}
     });
 
     if(error||data?.error){
