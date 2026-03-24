@@ -1354,14 +1354,16 @@ function saveEvent(existingId){
   saveState(evtId);closeModal();render();
 
   // Auto-sync to Google Calendar if connected
+  console.log('GCal connected?',_gcalConnected,'date?',data.date,'time?',data.startTime);
   if(_gcalConnected&&data.date&&data.startTime){
     autoSyncToGcal(evtId);
   }
 }
 
-// Auto-sync event to Google Calendar (fire and forget)
+// Auto-sync event to Google Calendar
 async function autoSyncToGcal(evtId){
   const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
+  console.log('GCal auto-sync starting for event:',evtId);
   try{
     const {data,error}=await _sb.functions.invoke('gcal-proxy',{
       body:{
@@ -1378,14 +1380,16 @@ async function autoSyncToGcal(evtId){
         }
       }
     });
+    if(error){console.error('GCal sync error:',error);return;}
+    if(data?.error){console.error('GCal sync data error:',data.error);if(data.error==='NOT_CONNECTED')_gcalConnected=false;return;}
     if(data?.success){
+      console.log('GCal synced successfully:',data.gcal_event_id);
       evt.gcalSynced=true;
       evt.gcalEventId=data.gcal_event_id;
       evt.gcalLink=data.html_link;
       saveState(evtId);
     }
-    if(data?.error==='NOT_CONNECTED')_gcalConnected=false;
-  }catch(e){console.warn('GCal auto-sync failed:',e);}
+  }catch(e){console.error('GCal auto-sync exception:',e);}
 }
 
 function canDeleteEvent(evt){
@@ -1477,9 +1481,9 @@ function showDetail(id){
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${evt.gcalSynced
             ?`<span class="gcal-btn synced" style="cursor:default">✓ Synced to GCal</span>`
-            :_gcalConnected
-              ?`<button class="gcal-btn" onclick="event.stopPropagation();pushToGcal('${evt.id}')">📅 Sync to GCal</button>`
-              :`<button class="gcal-btn" onclick="event.stopPropagation();connectGoogleCalendar()">📅 Connect Google Cal</button>`}
+            :!_gcalConnected
+              ?`<span style="font-size:10px;color:var(--orange);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();connectGoogleCalendar()">Connect Google Calendar to auto-sync</span>`
+              :`<span style="font-size:10px;color:var(--t5)">📅 Will sync on next save</span>`}
           ${evt.attendees&&evt.attendees.length?`<button class="gcal-btn" onclick="event.stopPropagation();sendGcalInvites('${evt.id}')">📧 ${evt.invitesSent?"Resend":"Send"} Invites</button>`:""}
           ${evt.outcome&&evt.outcome!=="rescheduled"?`<button class="close-link" onclick="event.stopPropagation();mockLogToClose('${evt.id}')" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${evt.closeActivity?"📋 Re-Log to Close":"📋 Log to Close"}</button>`:""}
           ${evt.closeLeadId
@@ -1701,11 +1705,13 @@ let _gcalConnected = false;
 async function checkGcalConnection(){
   if(!_currentUser)return;
   try{
-    const {data}=await _sb.functions.invoke('gcal-proxy',{
+    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
       body:{action:'check_connection',user_id:_currentUser.id}
     });
+    if(error){console.warn('GCal check error:',error);_gcalConnected=false;return;}
     _gcalConnected=data?.connected||false;
-  }catch(e){_gcalConnected=false;}
+    console.log('GCal connected:',_gcalConnected);
+  }catch(e){console.warn('GCal check failed:',e);_gcalConnected=false;}
 }
 
 function connectGoogleCalendar(){
