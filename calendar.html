@@ -1647,32 +1647,43 @@ function mockSendInvites(evtId){
 }
 
 // ─── Step 12: Zoom Link Generation (Mock) ───
-function generateZoomLink(){
+async function generateZoomLink(){
   const btn=document.getElementById("zoomGenBtn");
   const res=document.getElementById("zoomResult");
   const hiddenInput=document.getElementById("mZoomLink");
   if(!btn)return;
   btn.textContent="⏳ Generating...";btn.style.pointerEvents="none";
-  setTimeout(()=>{
-    const mockId=Math.floor(10000000000+Math.random()*90000000000);
-    const mockLink=`https://zoom.us/j/${mockId}`;
-    if(hiddenInput)hiddenInput.value=mockLink;
+
+  // Get event details from the form for the meeting title/duration
+  const title=document.getElementById("mTitle")?.value||"DA Calendar Meeting";
+  const typeId=document.getElementById("mType")?.value||"demo";
+  const dur=getDuration(typeId);
+
+  try{
+    const {data,error}=await _sb.functions.invoke('zoom-proxy',{
+      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar'}
+    });
+
+    if(error||data?.error){
+      btn.textContent="📹 Generate Zoom Link";btn.style.pointerEvents="";
+      if(res)res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ Zoom error: ${esc(data?.error||error?.message||'Unknown')}</div>`;
+      return;
+    }
+
+    const link=data.join_url;
+    if(hiddenInput)hiddenInput.value=link;
     btn.replaceWith(Object.assign(document.createElement("span"),{
       className:"zoom-link",
-      innerHTML:`📹 ${mockLink}`,
+      innerHTML:`📹 ${link}`,
       title:"Click to copy",
-      onclick:()=>copyToClipboard(mockLink)
+      onclick:()=>copyToClipboard(link)
     }));
-    if(res){
-      if(!integrations.zoom.enabled){
-        res.innerHTML=`<div style="font-size:10px;color:var(--orange);margin-top:4px">⚠ Zoom not connected — mock link generated. <span style="cursor:pointer;text-decoration:underline" onclick="openIntegrationsModal()">Configure →</span></div>`;
-      }else{
-        res.innerHTML=`<div style="font-size:10px;color:var(--green);margin-top:4px">✓ Zoom meeting created</div>`;
-      }
-    }
-    // When live: POST https://api.zoom.us/v2/users/me/meetings
-    // Requires Zoom OAuth or JWT server-to-server app
-  },600);
+    if(res)res.innerHTML=`<div style="font-size:10px;color:var(--green);margin-top:4px">✓ Zoom meeting created (ID: ${data.meeting_id})</div>`;
+
+  }catch(err){
+    btn.textContent="📹 Generate Zoom Link";btn.style.pointerEvents="";
+    if(res)res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ ${esc(err.message||'Connection failed')}</div>`;
+  }
 }
 
 // ─── Step 13: Attendee Management ───
