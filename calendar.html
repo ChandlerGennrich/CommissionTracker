@@ -849,6 +849,9 @@ function evtToRow(e){
     dealership:e.dealership||null, contact:e.contact||null,
     close_lead_id:e.closeLeadId||null, notes:e.notes||null,
     outcome:e.outcome||"", zoom_link:e.zoomLink||null,
+    zoom_meeting_id:e.zoomMeetingId||null,
+    gcal_event_id:e.gcalEventId||null,
+    gcal_link:e.gcalLink||null,
     attendees:e.attendees||[], rescheduled_from:e.rescheduledFrom||null,
     rescheduled_to:e.rescheduledTo||null, gcal_synced:e.gcalSynced||false,
     invites_sent:e.invitesSent||false, close_activity:e.closeActivity||null,
@@ -863,6 +866,9 @@ function rowToEvt(r){
     dealership:r.dealership, contact:r.contact,
     closeLeadId:r.close_lead_id, notes:r.notes,
     outcome:r.outcome||"", zoomLink:r.zoom_link,
+    zoomMeetingId:r.zoom_meeting_id,
+    gcalEventId:r.gcal_event_id,
+    gcalLink:r.gcal_link,
     attendees:r.attendees||[], rescheduledFrom:r.rescheduled_from,
     rescheduledTo:r.rescheduled_to, gcalSynced:r.gcal_synced,
     invitesSent:r.invites_sent, closeActivity:r.close_activity,
@@ -1257,6 +1263,7 @@ function showEventModal(evt){
           ${evt.zoomLink?`<span class="zoom-link" onclick="copyToClipboard('${esc(evt.zoomLink)}')" title="Click to copy">${esc(evt.zoomLink)}</span>`
           :`<button class="gcal-btn" onclick="generateZoomLink()" id="zoomGenBtn">📹 Generate Zoom Link</button>`}
           <input type="hidden" id="mZoomLink" value="${esc(evt.zoomLink||"")}">
+          <input type="hidden" id="mZoomMeetingId" value="${esc(evt.zoomMeetingId||"")}">
         </div>
         <div id="zoomResult"></div>
       </div>
@@ -1329,6 +1336,7 @@ function saveEvent(existingId){
     notes:document.getElementById("mNotes").value.trim(),
     outcome:document.getElementById("mOutcome")?.value||"",
     zoomLink:document.getElementById("mZoomLink")?.value||"",
+    zoomMeetingId:document.getElementById("mZoomMeetingId")?.value||"",
     attendees:modalAttendees.slice()
   };
   if(!data.title)return;
@@ -1344,6 +1352,40 @@ function saveEvent(existingId){
   }
   modalAttendees=[];
   saveState(evtId);closeModal();render();
+
+  // Auto-sync to Google Calendar if connected
+  if(_gcalConnected&&data.date&&data.startTime){
+    autoSyncToGcal(evtId);
+  }
+}
+
+// Auto-sync event to Google Calendar (fire and forget)
+async function autoSyncToGcal(evtId){
+  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
+  try{
+    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
+      body:{
+        action:'create_event',
+        user_id:_currentUser.id,
+        event:{
+          title:evt.title,
+          date:evt.date,
+          start_time:evt.startTime,
+          end_time:evt.endTime,
+          notes:evt.notes||'',
+          attendees:evt.attendees||[],
+          zoom_link:evt.zoomLink||''
+        }
+      }
+    });
+    if(data?.success){
+      evt.gcalSynced=true;
+      evt.gcalEventId=data.gcal_event_id;
+      evt.gcalLink=data.html_link;
+      saveState(evtId);
+    }
+    if(data?.error==='NOT_CONNECTED')_gcalConnected=false;
+  }catch(e){console.warn('GCal auto-sync failed:',e);}
 }
 
 function canDeleteEvent(evt){
@@ -1357,6 +1399,21 @@ function deleteEvent(id){
   if(!evt)return;
   if(!canDeleteEvent(evt)){alert("You can only delete events you created.");return;}
   if(!confirm("Delete this event?"))return;
+
+  // Delete from Google Calendar if synced
+  if(evt.gcalEventId&&_gcalConnected){
+    _sb.functions.invoke('gcal-proxy',{
+      body:{action:'delete_event',user_id:_currentUser.id,gcal_event_id:evt.gcalEventId}
+    }).catch(e=>console.warn('GCal delete failed:',e));
+  }
+
+  // Delete from Zoom if meeting exists
+  if(evt.zoomMeetingId){
+    _sb.functions.invoke('zoom-proxy',{
+      body:{action:'delete_meeting',meeting_id:String(evt.zoomMeetingId)}
+    }).catch(e=>console.warn('Zoom delete failed:',e));
+  }
+
   state.events=state.events.filter(e=>e.id!==id);
   deleteEvent_db(id);
   closeModal();render();
@@ -1418,7 +1475,11 @@ function showDetail(id){
       <div class="integ-section">
         <div class="integ-section-title">Actions</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="gcal-btn${evt.gcalSynced?" synced":""}" onclick="event.stopPropagation();pushToGcal('${evt.id}')">${evt.gcalSynced?"✓ Synced to GCal":_gcalConnected?"📅 Push to Google Cal":"📅 Connect Google Cal"}</button>
+          ${evt.gcalSynced
+            ?`<span class="gcal-btn synced" style="cursor:default">✓ Synced to GCal</span>`
+            :_gcalConnected
+              ?`<button class="gcal-btn" onclick="event.stopPropagation();pushToGcal('${evt.id}')">📅 Sync to GCal</button>`
+              :`<button class="gcal-btn" onclick="event.stopPropagation();connectGoogleCalendar()">📅 Connect Google Cal</button>`}
           ${evt.attendees&&evt.attendees.length?`<button class="gcal-btn" onclick="event.stopPropagation();sendGcalInvites('${evt.id}')">📧 ${evt.invitesSent?"Resend":"Send"} Invites</button>`:""}
           ${evt.outcome&&evt.outcome!=="rescheduled"?`<button class="close-link" onclick="event.stopPropagation();mockLogToClose('${evt.id}')" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${evt.closeActivity?"📋 Re-Log to Close":"📋 Log to Close"}</button>`:""}
           ${evt.closeLeadId
@@ -1729,17 +1790,22 @@ async function generateZoomLink(){
   const btn=document.getElementById("zoomGenBtn");
   const res=document.getElementById("zoomResult");
   const hiddenInput=document.getElementById("mZoomLink");
+  const hiddenMeetingId=document.getElementById("mZoomMeetingId");
   if(!btn)return;
   btn.textContent="⏳ Generating...";btn.style.pointerEvents="none";
 
-  // Get event details from the form for the meeting title/duration
+  // Get event details from the form for the meeting title/duration/time
   const title=document.getElementById("mTitle")?.value||"DA Calendar Meeting";
   const typeId=document.getElementById("mType")?.value||"demo";
   const dur=getDuration(typeId);
+  const evtDate=document.getElementById("mDate")?.value||"";
+  const evtTime=document.getElementById("mStart")?.value||"";
+  // Build ISO start_time for Zoom (e.g. "2026-03-25T10:30:00")
+  const startTime=(evtDate&&evtTime)?`${evtDate}T${evtTime}:00`:"";
 
   try{
     const {data,error}=await _sb.functions.invoke('zoom-proxy',{
-      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:_currentUser?.email||''}
+      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:_currentUser?.email||'',start_time:startTime}
     });
 
     if(error||data?.error){
@@ -1750,6 +1816,7 @@ async function generateZoomLink(){
 
     const link=data.join_url;
     if(hiddenInput)hiddenInput.value=link;
+    if(hiddenMeetingId)hiddenMeetingId.value=data.meeting_id||"";
     btn.replaceWith(Object.assign(document.createElement("span"),{
       className:"zoom-link",
       innerHTML:`📹 ${link}`,
