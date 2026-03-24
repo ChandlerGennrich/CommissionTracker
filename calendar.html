@@ -473,9 +473,18 @@ async function enterApp(){
   }
 
   await loadState();
+  await checkGcalConnection();
 
   // Default: filter to only show your own events
   state.filterUsers = [_currentUser.id];
+
+  // Check if returning from Google OAuth
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('gcal') === 'connected'){
+    _gcalConnected = true;
+    // Clean up URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
 
   render();
 }
@@ -1403,13 +1412,14 @@ function showDetail(id){
       ${evt.rescheduledFrom?(()=>{const orig=state.events.find(e=>e.id===evt.rescheduledFrom);return orig?`<div class="detail-row"><span class="detail-label">Rescheduled From</span><span class="resched-link" onclick="event.stopPropagation();closeModal();setTimeout(()=>showDetail('${orig.id}'),100)">${orig.date} ${orig.startTime?fmtTimeDisplay(orig.startTime):""}</span></div>`:""})():""}
       ${evt.rescheduledTo?(()=>{const nxt=state.events.find(e=>e.id===evt.rescheduledTo);return nxt?`<div class="detail-row"><span class="detail-label">Rescheduled To</span><span class="resched-link" onclick="event.stopPropagation();closeModal();setTimeout(()=>showDetail('${nxt.id}'),100)">${nxt.date} ${nxt.startTime?fmtTimeDisplay(nxt.startTime):""}</span></div>`:""})():""}
       ${evt.zoomLink?`<div class="detail-row"><span class="detail-label">Zoom</span><a class="zoom-link" href="${esc(evt.zoomLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;font-size:11px">📹 ${esc(evt.zoomLink)}</a></div>`:""}
+      ${evt.gcalLink?`<div class="detail-row"><span class="detail-label">Google Cal</span><a class="gcal-btn synced" href="${esc(evt.gcalLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;text-decoration:none;display:inline-flex">📅 View in Google Calendar ↗</a></div>`:""}
       ${evt.attendees&&evt.attendees.length?`<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="detail-label">Attendees</span><div>${evt.attendees.map(a=>`<span class="attendee-chip">${esc(a)}</span>`).join("")}</div></div>`:""}
       ${evt.notes?`<div class="detail-notes">${esc(evt.notes)}</div>`:""}
       <div class="integ-section">
-        <div class="integ-section-title">Actions <span class="integ-badge live">Close Live</span></div>
+        <div class="integ-section-title">Actions</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="gcal-btn${evt.gcalSynced?" synced":""}" onclick="event.stopPropagation();mockGcalSync('${evt.id}')">${evt.gcalSynced?"✓ Synced to GCal":"📅 Push to Google Cal"}</button>
-          ${evt.attendees&&evt.attendees.length?`<button class="gcal-btn" onclick="event.stopPropagation();mockSendInvites('${evt.id}')">📧 ${evt.invitesSent?"Resend":"Send"} Invites</button>`:""}
+          <button class="gcal-btn${evt.gcalSynced?" synced":""}" onclick="event.stopPropagation();pushToGcal('${evt.id}')">${evt.gcalSynced?"✓ Synced to GCal":_gcalConnected?"📅 Push to Google Cal":"📅 Connect Google Cal"}</button>
+          ${evt.attendees&&evt.attendees.length?`<button class="gcal-btn" onclick="event.stopPropagation();sendGcalInvites('${evt.id}')">📧 ${evt.invitesSent?"Resend":"Send"} Invites</button>`:""}
           ${evt.outcome&&evt.outcome!=="rescheduled"?`<button class="close-link" onclick="event.stopPropagation();mockLogToClose('${evt.id}')" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${evt.closeActivity?"📋 Re-Log to Close":"📋 Log to Close"}</button>`:""}
           ${evt.closeLeadId
             ?`<a class="close-link" href="https://app.close.com/lead/${esc(evt.closeLeadId)}/" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;text-decoration:none">📞 Open in Close ↗</a>`
@@ -1624,26 +1634,94 @@ function mockLogToClose(evtId){
 }
 
 // ─── Step 11: Google Calendar Sync (Mock) ───
-function mockGcalSync(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  if(!integrations.gcal.enabled){
-    evt.gcalSynced=true;
-    saveState();closeModal();setTimeout(()=>showDetail(evtId),100);
-    return;
-  }
-  // When live, this would use Google Calendar API:
-  // POST https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events
-  // Requires OAuth2 flow + server-side token management
-  evt.gcalSynced=true;
-  saveState();closeModal();setTimeout(()=>showDetail(evtId),100);
+// ─── Step 11: Google Calendar (Live) ───
+let _gcalConnected = false;
+
+async function checkGcalConnection(){
+  if(!_currentUser)return;
+  try{
+    const {data}=await _sb.functions.invoke('gcal-proxy',{
+      body:{action:'check_connection',user_id:_currentUser.id}
+    });
+    _gcalConnected=data?.connected||false;
+  }catch(e){_gcalConnected=false;}
 }
 
-function mockSendInvites(evtId){
+function connectGoogleCalendar(){
+  if(!_currentUser)return;
+  window.location.href=`https://ygoorvnvwvdygqprkxyf.supabase.co/functions/v1/gcal-auth?user_id=${_currentUser.id}`;
+}
+
+async function pushToGcal(evtId){
   const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  evt.invitesSent=true;
-  saveState();closeModal();setTimeout(()=>showDetail(evtId),100);
-  // When live: would use Google Calendar API to send invitations
-  // or Gmail API to send calendar .ics attachments
+  if(!_gcalConnected){connectGoogleCalendar();return;}
+
+  try{
+    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
+      body:{
+        action:'create_event',
+        user_id:_currentUser.id,
+        event:{
+          title:evt.title,
+          date:evt.date,
+          start_time:evt.startTime,
+          end_time:evt.endTime,
+          notes:evt.notes||'',
+          attendees:evt.attendees||[],
+          zoom_link:evt.zoomLink||''
+        }
+      }
+    });
+
+    if(error||data?.error){
+      alert('Google Calendar error: '+(data?.error||error?.message||'Unknown'));
+      return;
+    }
+
+    evt.gcalSynced=true;
+    evt.gcalEventId=data.gcal_event_id;
+    evt.gcalLink=data.html_link;
+    saveState(evtId);closeModal();setTimeout(()=>showDetail(evtId),100);
+  }catch(err){
+    alert('Failed to push to Google Calendar: '+err.message);
+  }
+}
+
+async function sendGcalInvites(evtId){
+  // Invites are sent automatically when we create the event with attendees
+  // This re-pushes the event to send/resend invites
+  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
+  if(!_gcalConnected){connectGoogleCalendar();return;}
+  if(!evt.attendees||!evt.attendees.length){alert('Add attendees first.');return;}
+
+  try{
+    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
+      body:{
+        action:'create_event',
+        user_id:_currentUser.id,
+        event:{
+          title:evt.title,
+          date:evt.date,
+          start_time:evt.startTime,
+          end_time:evt.endTime,
+          notes:evt.notes||'',
+          attendees:evt.attendees||[],
+          zoom_link:evt.zoomLink||''
+        }
+      }
+    });
+
+    if(error||data?.error){
+      alert('Invite error: '+(data?.error||error?.message||'Unknown'));
+      return;
+    }
+
+    evt.invitesSent=true;
+    evt.gcalSynced=true;
+    saveState(evtId);closeModal();setTimeout(()=>showDetail(evtId),100);
+  }catch(err){
+    alert('Failed to send invites: '+err.message);
+  }
 }
 
 // ─── Step 12: Zoom Link Generation (Mock) ───
