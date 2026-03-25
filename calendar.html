@@ -929,6 +929,23 @@ async function deleteEvent_db(id){
 }
 
 // ─── FILTERED EVENTS ───
+// Helper: resolve the Closer's user info for Zoom/GCal (falls back to current user)
+function getCloserInfo(evt){
+  if(evt.closerId){
+    const closer=state.users.find(u=>u.id===evt.closerId);
+    if(closer)return {id:closer.id, email:closer.email||''};
+  }
+  return {id:_currentUser?.id||'', email:_currentUser?.email||''};
+}
+// Same but from the form (before event is saved)
+function getCloserInfoFromForm(){
+  const closerId=document.getElementById("mCloser")?.value;
+  if(closerId){
+    const closer=state.users.find(u=>u.id===closerId);
+    if(closer)return {id:closer.id, email:closer.email||''};
+  }
+  return {id:_currentUser?.id||'', email:_currentUser?.email||''};
+}
 function getFiltered(){
   // When no team filter is active, default to showing only your events
   const activeUsers=state.filterUsers.length?state.filterUsers:(_currentUser?[_currentUser.id]:[]);
@@ -1353,20 +1370,21 @@ function saveEvent(existingId){
   modalAttendees=[];
   saveState(evtId);closeModal();render();
 
-  // Auto-sync to Google Calendar if connected
-  if(_gcalConnected&&data.date&&data.startTime){
+  // Auto-sync to Closer's Google Calendar (proxy checks their connection)
+  if(data.date&&data.startTime){
     autoSyncToGcal(evtId);
   }
 }
 
-// Auto-sync event to Google Calendar
+// Auto-sync event to Google Calendar (on Closer's calendar)
 async function autoSyncToGcal(evtId){
   const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
+  const closerInfo=getCloserInfo(evt);
   try{
     const {data,error}=await _sb.functions.invoke('gcal-proxy',{
       body:{
         action:'create_event',
-        user_id:_currentUser.id,
+        user_id:closerInfo.id,
         event:{
           title:evt.title,
           date:evt.date,
@@ -1378,7 +1396,7 @@ async function autoSyncToGcal(evtId){
         }
       }
     });
-    if(error||data?.error){if(data?.error==='NOT_CONNECTED')_gcalConnected=false;return;}
+    if(error||data?.error){return;} // Silently skip if Closer hasn't connected GCal
     if(data?.success){
       evt.gcalSynced=true;
       evt.gcalEventId=data.gcal_event_id;
@@ -1400,10 +1418,11 @@ function deleteEvent(id){
   if(!canDeleteEvent(evt)){alert("You can only delete events you created.");return;}
   if(!confirm("Delete this event?"))return;
 
-  // Delete from Google Calendar if synced
-  if(evt.gcalEventId&&_gcalConnected){
+  // Delete from Google Calendar if synced (uses Closer's connection)
+  if(evt.gcalEventId){
+    const closerInfo=getCloserInfo(evt);
     _sb.functions.invoke('gcal-proxy',{
-      body:{action:'delete_event',user_id:_currentUser.id,gcal_event_id:evt.gcalEventId}
+      body:{action:'delete_event',user_id:closerInfo.id,gcal_event_id:evt.gcalEventId}
     }).catch(()=>{});
   }
 
@@ -1705,12 +1724,13 @@ function connectGoogleCalendar(){
 async function pushToGcal(evtId){
   const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
   if(!_gcalConnected){connectGoogleCalendar();return;}
+  const closerInfo=getCloserInfo(evt);
 
   try{
     const {data,error}=await _sb.functions.invoke('gcal-proxy',{
       body:{
         action:'create_event',
-        user_id:_currentUser.id,
+        user_id:closerInfo.id,
         event:{
           title:evt.title,
           date:evt.date,
@@ -1745,10 +1765,11 @@ async function sendGcalInvites(evtId){
   if(!evt.attendees||!evt.attendees.length){alert('Add attendees first.');return;}
 
   try{
+    const closerInfo=getCloserInfo(evt);
     const {data,error}=await _sb.functions.invoke('gcal-proxy',{
       body:{
         action:'create_event',
-        user_id:_currentUser.id,
+        user_id:closerInfo.id,
         event:{
           title:evt.title,
           date:evt.date,
@@ -1793,8 +1814,9 @@ async function generateZoomLink(){
   const startTime=(evtDate&&evtTime)?`${evtDate}T${evtTime}:00`:"";
 
   try{
+    const closerInfo=getCloserInfoFromForm();
     const {data,error}=await _sb.functions.invoke('zoom-proxy',{
-      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:_currentUser?.email||'',start_time:startTime,attendees:modalAttendees.slice()}
+      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:closerInfo.email,start_time:startTime,attendees:modalAttendees.slice()}
     });
 
     if(error||data?.error){
