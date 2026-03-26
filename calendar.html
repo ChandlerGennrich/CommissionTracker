@@ -593,6 +593,15 @@ const OUTCOMES=[
   {id:"sale",label:"$",full:"Sale",color:"#22c55e"}
 ];
 
+// Close CRM Custom Activity Type IDs — mapped by DA call type
+const CLOSE_CUSTOM_ACTIVITY={
+  "demo":"actitype_4d6xJDgG76nWxTtS1aGEIn",
+  "led":"actitype_71jF76iANEIul39AAgIcOM",
+  "sync":"actitype_2912GKCy7hJS6QfKB6d99l"
+};
+// Sale outcome uses its own activity type regardless of call type
+const CLOSE_SALE_ACTIVITY="actitype_08DCUgDXOI6hvzOc3QD8qi";
+
 function outcomeButtonsHtml(evtId,currentOutcome,compact){
   let html=`<div class="outcome-row" onclick="event.stopPropagation()">`;
   OUTCOMES.forEach(o=>{
@@ -674,12 +683,15 @@ function showOutcomeConfirmed(evtId,outcome){
   const oLabel=o?o.full:outcome;
   const draft=buildDraftActivity(evt,outcome);
   const hasCloseId=!!evt.closeLeadId;
+  const customTypeId=outcome==='sale'?CLOSE_SALE_ACTIVITY:(CLOSE_CUSTOM_ACTIVITY[evt.type]||null);
+  const activityLabel=outcome==='sale'?'New Sale Activity':customTypeId?(t?t.label+' Activity':'Custom Activity'):'Note Activity';
 
   mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="modal" style="width:480px;max-width:95vw" onclick="event.stopPropagation()">
     <div style="padding:16px 18px;border-bottom:3px solid ${oColor};text-align:center">
       <div style="font-size:28px;margin-bottom:6px">${outcome==="showed"?"✓":outcome==="no-show"?"✗":outcome==="sale"?"💰":"📋"}</div>
       <div style="font-size:14px;font-weight:700;color:var(--t1)">Outcome: <span style="color:${oColor}">${oLabel}</span></div>
       <div style="font-size:12px;color:var(--t3);margin-top:4px">${esc(evt.title)}${evt.dealership?" · "+esc(evt.dealership):""}</div>
+      <div style="font-size:10px;color:var(--cyan);margin-top:6px;font-family:var(--fm)">Will draft: ${activityLabel}</div>
     </div>
     <div style="padding:16px 18px">
       <div class="field-label" style="margin-bottom:6px">Draft Activity for Close CRM</div>
@@ -708,20 +720,33 @@ async function logDraftAndOpenClose(evtId){
   evt.closeActivity={logged:true,timestamp:new Date().toISOString(),note:draftNote};
   saveState(evtId);
 
-  // Log activity to Close CRM via Edge Function
-  if(evt.closeLeadId&&draftNote){
-    try{
-      const {data,error}=await _sb.functions.invoke('close-proxy',{
-        body:{action:'log_activity',lead_id:evt.closeLeadId,note:draftNote}
-      });
-      if(data?.success)evt.closeActivity.closeActivityId=data.activity_id;
-      if(error||data?.error)console.warn('Close log error:',data?.error||error);
-    }catch(e){console.warn('Close log failed:',e);}
-  }
-
-  // Open Close contact record
   if(evt.closeLeadId){
-    window.open(`https://app.close.com/lead/${evt.closeLeadId}/`,"_blank");
+    // Determine which custom activity type to use
+    const customTypeId=evt.outcome==='sale'?CLOSE_SALE_ACTIVITY:(CLOSE_CUSTOM_ACTIVITY[evt.type]||null);
+
+    if(customTypeId){
+      // Log custom activity to Close CRM
+      try{
+        const {data,error}=await _sb.functions.invoke('close-proxy',{
+          body:{action:'log_custom_activity',lead_id:evt.closeLeadId,custom_activity_type_id:customTypeId}
+        });
+        if(data?.success)evt.closeActivity.closeActivityId=data.activity_id;
+        if(error||data?.error)console.warn('Close custom activity error:',data?.error||error);
+      }catch(e){console.warn('Close custom activity failed:',e);}
+    }
+
+    // Also log the note if there is one (for all call types)
+    if(draftNote){
+      try{
+        const {data,error}=await _sb.functions.invoke('close-proxy',{
+          body:{action:'log_activity',lead_id:evt.closeLeadId,note:draftNote}
+        });
+        if(error||data?.error)console.warn('Close note error:',data?.error||error);
+      }catch(e){console.warn('Close note failed:',e);}
+    }
+
+    // Open Close contact record
+    window.open('https://app.close.com/lead/'+evt.closeLeadId+'/','_blank');
   }
   closeModal();render();
 }
