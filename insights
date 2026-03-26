@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DA Insights — Dealership Accelerator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg0:#0a0a0a;--bg1:#121218;--bg2:#0e0e14;--bg3:#111118;--bgH:#1a1a22;
+  --brd:#252530;--brd2:#1e1e28;
+  --acc:#D3FB40;--accD:#a8c933;--accG:rgba(211,251,64,0.08);
+  --t1:#e8e8e8;--t2:#b8b8c8;--t3:#888;--t4:#666;--t5:#555;--t6:#444;
+  --blue:#3b82f6;--green:#22c55e;--orange:#f97316;--purple:#a855f7;
+  --red:#ef4444;--cyan:#06b6d4;--pink:#ec4899;
+  --fb:'Inter',-apple-system,sans-serif;--fm:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--fb);background:var(--bg0);color:var(--t2);min-height:100vh;font-size:14px;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.015;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 220'%3E%3Cpath fill='%23ffffff' d='M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z'/%3E%3Cpath fill='%23ffffff' d='M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z'/%3E%3C/svg%3E");
+  background-size:120px 150px;background-repeat:repeat;}
+.hdr{position:sticky;top:0;z-index:100;background:var(--bg1);border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;}
+.hdr-l{display:flex;align-items:center;gap:12px;}
+.hdr-brand{font-size:14px;font-weight:800;color:var(--acc);letter-spacing:-0.02em;}
+.hdr-div{width:1px;height:18px;background:var(--brd);margin:0 4px;}
+.hdr-sub{font-size:10px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:0.08em;}
+.hdr-r{display:flex;align-items:center;gap:6px;}
+.btn{padding:6px 12px;border:1px solid var(--brd);background:var(--bgH);color:var(--t3);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.04em;transition:all .15s;white-space:nowrap;text-decoration:none;}
+.btn:hover{border-color:var(--acc);color:var(--acc);background:var(--accG);}
+
+/* Controls bar */
+.controls{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--brd2);flex-wrap:wrap;}
+.ctrl-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);}
+.ctrl-sel{font-family:var(--fm);font-size:11px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:5px 8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;}
+.ctrl-sel:focus{outline:none;border-color:var(--acc);}
+.ctrl-sel option{background:var(--bg2);color:var(--t1);}
+.ctrl-date{font-family:var(--fm);font-size:11px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:5px 8px;color-scheme:dark;}
+.ctrl-date:focus{outline:none;border-color:var(--acc);}
+.view-tog{display:flex;background:var(--bgH);border-radius:6px;padding:3px;gap:2px;}
+.view-btn{padding:6px 14px;border:none;border-radius:4px;background:transparent;color:var(--t4);font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--fb);transition:all .15s;}
+.view-btn.on{background:var(--acc);color:var(--bg0);}
+.view-btn:hover:not(.on){background:var(--brd);color:var(--t3);}
+
+/* Dashboard content */
+.dash{padding:20px;position:relative;z-index:1;}
+.section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);margin-bottom:12px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:24px;}
+.card{background:var(--bg2);border:1px solid var(--brd2);padding:14px 16px;position:relative;}
+.card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;opacity:.3;}
+.card.hl::before{opacity:1;}
+.card-label{font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);font-weight:600;margin-bottom:6px;}
+.card-val{font-family:var(--fm);font-size:22px;font-weight:600;color:var(--t1);}
+.card-val.g{color:var(--acc);}
+.card-val.b{color:var(--blue);}
+.card-val.r{color:var(--red);}
+.card-val.o{color:var(--orange);}
+.card-sub{font-size:10px;color:var(--t5);margin-top:2px;font-family:var(--fm);}
+
+/* Table */
+.tbl-wrap{background:var(--bg2);border:1px solid var(--brd2);overflow-x:auto;margin-bottom:24px;}
+.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--brd2);background:var(--bg1);}
+.tbl-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);}
+table{width:100%;border-collapse:collapse;min-width:800px;}
+thead th{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t5);padding:8px 10px;text-align:left;border-bottom:1px solid var(--brd);background:var(--bg1);white-space:nowrap;position:sticky;top:0;}
+thead th.num{text-align:right;}
+tbody tr{border-bottom:1px solid #1a1a22;transition:background .1s;}
+tbody tr:hover{background:var(--bgH);}
+tbody td{padding:8px 10px;font-size:12px;color:var(--t2);}
+tbody td.num{text-align:right;font-family:var(--fm);font-size:11px;}
+tbody td.name{font-weight:600;color:var(--t1);}
+tbody td.g{color:var(--acc);}
+tbody td.r{color:var(--red);}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--t5);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:13px;}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg0);padding:20px;}
+.login-box{width:100%;max-width:380px;background:var(--bg1);border:1px solid var(--brd);padding:36px 32px 32px;}
+.login-hdr{padding:0 0 16px;text-align:center;border-bottom:1px solid var(--brd2);margin-bottom:20px;}
+.login-title{font-size:16px;font-weight:700;color:var(--t1);margin-top:12px;}
+.login-sub{font-size:11px;color:var(--t4);margin-top:4px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t5);margin-bottom:4px;}
+.login-field input{width:100%;font-family:var(--fb);font-size:12px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:10px 12px;outline:none;}
+.login-field input:focus{border-color:var(--acc);}
+.login-btn{width:100%;padding:10px;border:1px solid var(--acc);background:var(--acc);color:var(--bg0);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:.04em;}
+.login-btn:hover{background:#e4ff6a;}
+.login-err{font-size:11px;color:var(--red);margin-top:8px;display:none;}
+.login-loading{text-align:center;padding:20px;color:var(--t4);font-size:12px;display:none;}
+
+@media(max-width:768px){.cards{grid-template-columns:repeat(2,1fr);}.controls{gap:8px;}}
+@media(max-width:500px){.cards{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-hdr">
+      <svg width="36" height="36" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
+      <div class="login-title">DA Insights</div>
+      <div class="login-sub">Sign in to view reports.</div>
+    </div>
+    <div id="loginForm">
+      <div class="login-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@dealershipaccelerator.io"></div>
+      <div class="login-field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <div class="login-err" id="loginErr"></div>
+    </div>
+    <div class="login-loading" id="loginLoading">Loading insights...</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<div class="hdr">
+  <div class="hdr-l">
+    <a href="index.html" style="display:flex;align-items:center;text-decoration:none">
+      <svg width="26" height="26" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
+      <span class="hdr-brand" style="margin-left:12px">DEALERSHIP ACCELERATOR</span>
+    </a>
+    <div class="hdr-div"></div>
+    <span class="hdr-sub">Insights</span>
+  </div>
+  <div class="hdr-r">
+    <a href="index.html" class="btn">🏠 Home</a>
+    <span style="font-size:10px;color:var(--t5);font-family:var(--fm)" id="userEmail"></span>
+    <button class="btn" onclick="doLogout()">Logout</button>
+  </div>
+</div>
+
+<div class="controls">
+  <div><span class="ctrl-label">From</span> <input type="date" class="ctrl-date" id="dateFrom" onchange="loadReports()"></div>
+  <div><span class="ctrl-label">To</span> <input type="date" class="ctrl-date" id="dateTo" onchange="loadReports()"></div>
+  <div class="hdr-div"></div>
+  <div><span class="ctrl-label">Role</span>
+    <select class="ctrl-sel" id="roleFilter" onchange="renderDash()">
+      <option value="all">All</option>
+      <option value="Closer">Closers</option>
+      <option value="SDR">SDRs</option>
+    </select>
+  </div>
+  <div><span class="ctrl-label">Rep</span>
+    <select class="ctrl-sel" id="repFilter" onchange="renderDash()">
+      <option value="all">All Reps</option>
+    </select>
+  </div>
+  <div class="hdr-div"></div>
+  <div class="view-tog">
+    <button class="view-btn on" data-v="dept" onclick="setInsightView('dept')">Department</button>
+    <button class="view-btn" data-v="rep" onclick="setInsightView('rep')">By Rep</button>
+  </div>
+</div>
+
+<div class="dash" id="dashContent"></div>
+</div>
+
+<script>
+const _sb=window.supabase.createClient('https://ygoorvnvwvdygqprkxyf.supabase.co','sb_publishable_kpKWMM2uJgrGSqS_W1CKLQ_uufpskfq');
+let _currentUser=null,_isAdmin=false,_calendarRole='Closer';
+let _reports=[],_profiles=[],_insightView='dept';
+
+// Auth
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginErr');
+  err.style.display='none';
+  if(!email||!pass){err.textContent='Email and password required.';err.style.display='block';return;}
+  document.getElementById('loginBtn').disabled=true;
+  try{
+    const r=await _sb.auth.signInWithPassword({email,password:pass});
+    if(r.error)throw r.error;
+    _currentUser=r.data.user;
+    await enterApp();
+  }catch(e){err.textContent=e.message;err.style.display='block';}
+  document.getElementById('loginBtn').disabled=false;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('loginPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  checkSession();
+});
+async function checkSession(){
+  const{data:{session}}=await _sb.auth.getSession();
+  if(session?.user){_currentUser=session.user;document.getElementById('loginForm').style.display='none';document.getElementById('loginLoading').style.display='block';await enterApp();}
+}
+async function enterApp(){
+  const{data:profile}=await _sb.from('profiles').select('is_admin,calendar_role').eq('id',_currentUser.id).single();
+  _isAdmin=profile?.is_admin===true;
+  _calendarRole=profile?.calendar_role||'Closer';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('userEmail').textContent=_currentUser.email;
+  document.getElementById('app').style.display='block';
+  // Default date range: this week
+  const now=new Date();const ws=new Date(now);ws.setDate(ws.getDate()-ws.getDay());
+  document.getElementById('dateFrom').value=fmtDate(ws);
+  document.getElementById('dateTo').value=fmtDate(now);
+  await loadProfiles();
+  await loadReports();
+}
+async function doLogout(){await _sb.auth.signOut();window.location.href='index.html';}
+
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function capName(s){if(!s)return'';return s.replace(/\b\w/g,c=>c.toUpperCase());}
+
+async function loadProfiles(){
+  const{data}=await _sb.from('profiles').select('id,email,is_admin,calendar_role,display_name');
+  _profiles=(data||[]).map(p=>({id:p.id,email:p.email,name:capName(p.display_name||p.email.split('@')[0]),role:p.calendar_role||'Closer',isAdmin:p.is_admin}));
+  // Populate rep filter
+  const sel=document.getElementById('repFilter');
+  sel.innerHTML='<option value="all">All Reps</option>';
+  if(_isAdmin){
+    _profiles.forEach(p=>{sel.innerHTML+='<option value="'+p.id+'">'+p.name+' ('+p.role+')</option>';});
+  }else{
+    sel.innerHTML+='<option value="'+_currentUser.id+'" selected>My Reports</option>';
+  }
+}
+
+async function loadReports(){
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
+  if(!from||!to)return;
+  let q=_sb.from('eod_reports').select('*').gte('date',from).lte('date',to);
+  if(!_isAdmin)q=q.eq('user_id',_currentUser.id);
+  const{data}=await q.order('date',{ascending:false});
+  _reports=data||[];
+  renderDash();
+}
+
+function setInsightView(v){
+  _insightView=v;
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  renderDash();
+}
+
+function getFilteredReports(){
+  let r=_reports;
+  const role=document.getElementById('roleFilter').value;
+  const rep=document.getElementById('repFilter').value;
+  if(role!=='all')r=r.filter(x=>x.role===role);
+  if(rep!=='all')r=r.filter(x=>x.user_id===rep);
+  return r;
+}
+
+function sum(arr,field){return arr.reduce((s,x)=>s+(x[field]||0),0);}
+
+function renderDash(){
+  const el=document.getElementById('dashContent');
+  const reports=getFilteredReports();
+  if(!reports.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No EOD reports found for this date range and filter.</div></div>';
+    return;
+  }
+  if(_insightView==='dept')el.innerHTML=renderDeptView(reports);
+  else el.innerHTML=renderRepView(reports);
+}
+
+function renderDeptView(reports){
+  const days=new Set(reports.map(r=>r.date)).size;
+  let h='<div class="section-title">Department Overview — '+days+' day'+(days!==1?'s':'')+'</div>';
+
+  // Top-level cards
+  h+='<div class="cards">';
+  h+=card('Total Reports',reports.length,'');
+  h+=card('Demos Scheduled',sum(reports,'inbound_demos_scheduled')+sum(reports,'outbound_demos_scheduled'),'b');
+  h+=card('Demos Showed',sum(reports,'demos_showed'),'g');
+  h+=card('Demos No-Show',sum(reports,'demos_no_show'),'r');
+  h+=card('Demos Cancelled',sum(reports,'demos_cancelled'),'');
+  h+=card('Demos Rescheduled',sum(reports,'demos_rescheduled'),'o');
+  h+='</div>';
+
+  h+='<div class="cards">';
+  h+=card('Collabs Scheduled',sum(reports,'inbound_collabs_scheduled'),'b');
+  h+=card('Collabs Showed',sum(reports,'collabs_showed'),'g');
+  h+=card('Collabs No-Show',sum(reports,'collabs_no_show'),'r');
+  h+=card('Collabs Cancelled',sum(reports,'collabs_cancelled'),'');
+  h+='</div>';
+
+  h+='<div class="cards">';
+  h+=card('Sales Units',sum(reports,'sales_units'),'g');
+  h+=card('Contract Value','$'+sum(reports,'total_contract_value').toLocaleString('en-US',{minimumFractionDigits:2}),'g');
+  h+=card('Cash Collected','$'+sum(reports,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2}),'g');
+  h+='</div>';
+
+  // Show rates
+  const totalDemos=sum(reports,'inbound_demos_scheduled')+sum(reports,'outbound_demos_scheduled');
+  const demoShowRate=totalDemos?Math.round((sum(reports,'demos_showed')/totalDemos)*100):0;
+  const totalCollabs=sum(reports,'inbound_collabs_scheduled');
+  const collabShowRate=totalCollabs?Math.round((sum(reports,'collabs_showed')/totalCollabs)*100):0;
+
+  h+='<div class="cards">';
+  h+=card('Demo Show Rate',demoShowRate+'%',demoShowRate>=60?'g':'r',null);
+  h+=card('Collab Show Rate',collabShowRate+'%',collabShowRate>=60?'g':'r',null);
+  h+=card('Outbound Dials',sum(reports,'outbound_dials'),'');
+  h+=card('Meaningful Convos',sum(reports,'meaningful_conversations'),'');
+  h+='</div>';
+
+  // Daily breakdown table
+  const byDate={};
+  reports.forEach(r=>{if(!byDate[r.date])byDate[r.date]={reports:[],date:r.date};byDate[r.date].reports.push(r);});
+  const dates=Object.keys(byDate).sort().reverse();
+
+  h+='<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-title">Daily Breakdown</span></div>';
+  h+='<table><thead><tr>';
+  h+='<th>Date</th><th class="num">Reports</th><th class="num">Demos Sched</th><th class="num">Showed</th><th class="num">No-Show</th>';
+  h+='<th class="num">Collabs Sched</th><th class="num">Showed</th><th class="num">Sales</th><th class="num">Cash</th>';
+  h+='</tr></thead><tbody>';
+  dates.forEach(d=>{
+    const dr=byDate[d].reports;
+    h+='<tr><td class="name">'+d+'</td>';
+    h+='<td class="num">'+dr.length+'</td>';
+    h+='<td class="num">'+(sum(dr,'inbound_demos_scheduled')+sum(dr,'outbound_demos_scheduled'))+'</td>';
+    h+='<td class="num g">'+sum(dr,'demos_showed')+'</td>';
+    h+='<td class="num r">'+sum(dr,'demos_no_show')+'</td>';
+    h+='<td class="num">'+sum(dr,'inbound_collabs_scheduled')+'</td>';
+    h+='<td class="num g">'+sum(dr,'collabs_showed')+'</td>';
+    h+='<td class="num g">'+sum(dr,'sales_units')+'</td>';
+    h+='<td class="num g">$'+sum(dr,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2})+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+function renderRepView(reports){
+  const byUser={};
+  reports.forEach(r=>{if(!byUser[r.user_id])byUser[r.user_id]={reports:[],id:r.user_id};byUser[r.user_id].reports.push(r);});
+
+  let h='<div class="section-title">Rep Breakdown</div>';
+  h+='<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-title">Performance by Rep</span></div>';
+  h+='<table><thead><tr>';
+  h+='<th>Name</th><th>Role</th><th class="num">Days</th><th class="num">Demos Sched</th><th class="num">Showed</th><th class="num">Show %</th>';
+  h+='<th class="num">Collabs Sched</th><th class="num">Showed</th><th class="num">Sales</th><th class="num">Cash</th><th class="num">Dials</th>';
+  h+='</tr></thead><tbody>';
+
+  Object.values(byUser).forEach(u=>{
+    const p=_profiles.find(x=>x.id===u.id);
+    const name=p?p.name:u.id;
+    const role=u.reports[0]?.role||'';
+    const dr=u.reports;
+    const totalDemos=sum(dr,'inbound_demos_scheduled')+sum(dr,'outbound_demos_scheduled');
+    const showRate=totalDemos?Math.round((sum(dr,'demos_showed')/totalDemos)*100):0;
+    h+='<tr>';
+    h+='<td class="name">'+name+'</td>';
+    h+='<td>'+role+'</td>';
+    h+='<td class="num">'+dr.length+'</td>';
+    h+='<td class="num">'+totalDemos+'</td>';
+    h+='<td class="num g">'+sum(dr,'demos_showed')+'</td>';
+    h+='<td class="num '+(showRate>=60?'g':'r')+'">'+showRate+'%</td>';
+    h+='<td class="num">'+sum(dr,'inbound_collabs_scheduled')+'</td>';
+    h+='<td class="num g">'+sum(dr,'collabs_showed')+'</td>';
+    h+='<td class="num g">'+sum(dr,'sales_units')+'</td>';
+    h+='<td class="num g">$'+sum(dr,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2})+'</td>';
+    h+='<td class="num">'+sum(dr,'outbound_dials')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+
+  // Individual detailed cards for each rep
+  Object.values(byUser).forEach(u=>{
+    const p=_profiles.find(x=>x.id===u.id);
+    const name=p?p.name:u.id;
+    const role=u.reports[0]?.role||'';
+    const dr=u.reports;
+    h+='<div class="section-title" style="margin-top:20px">'+name+' — '+role+' ('+dr.length+' report'+(dr.length!==1?'s':'')+')</div>';
+    h+='<div class="cards">';
+    if(role==='SDR'){
+      h+=card('Inbound Demos',sum(dr,'inbound_demos_scheduled'),'b');
+      h+=card('Outbound Demos',sum(dr,'outbound_demos_scheduled'),'');
+      h+=card('Showed',sum(dr,'demos_showed'),'g');
+      h+=card('Outbound Dials',sum(dr,'outbound_dials'),'');
+      h+=card('Meaningful Convos',sum(dr,'meaningful_conversations'),'');
+      h+=card('Personal Collabs',sum(dr,'personal_collabs_calendar'),'');
+      h+=card('Closed Sets',sum(dr,'sales_units'),'g');
+    }else{
+      h+=card('Demos Scheduled',sum(dr,'inbound_demos_scheduled'),'b');
+      h+=card('Demos Showed',sum(dr,'demos_showed'),'g');
+      h+=card('Collabs Scheduled',sum(dr,'inbound_collabs_scheduled'),'b');
+      h+=card('Collabs Showed',sum(dr,'collabs_showed'),'g');
+      h+=card('Syncs Scheduled',sum(dr,'syncs_scheduled'),'');
+      h+=card('Sales',sum(dr,'sales_units'),'g');
+      h+=card('Cash','$'+sum(dr,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2}),'g');
+    }
+    h+='</div>';
+  });
+
+  return h;
+}
+
+function card(label,val,cls,sub){
+  return '<div class="card'+(cls==='g'?' hl':'')+'"><div class="card-label">'+label+'</div><div class="card-val'+(cls?' '+cls:'')+'">'+val+'</div>'+(sub?'<div class="card-sub">'+sub+'</div>':'')+'</div>';
+}
+</script>
+</body>
+</html>
