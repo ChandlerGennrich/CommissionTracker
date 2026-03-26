@@ -10,10 +10,10 @@
 :root{
   --bg0:#0a0a0a;--bg1:#121218;--bg2:#0e0e14;--bg3:#111118;--bgH:#1a1a22;
   --brd:#252530;--brd2:#1e1e28;
-  --acc:#D3FB40;--accD:#a8c933;--accG:rgba(211,251,64,0.08);
+  --acc:#D3FB40;--accD:#a8c933;--accG:rgba(211,251,64,0.08);--accG2:rgba(211,251,64,0.04);
   --t1:#e8e8e8;--t2:#b8b8c8;--t3:#888;--t4:#666;--t5:#555;--t6:#444;
   --blue:#3b82f6;--green:#22c55e;--orange:#f97316;--purple:#a855f7;
-  --red:#ef4444;--cyan:#06b6d4;--pink:#ec4899;
+  --red:#ef4444;--cyan:#06b6d4;--pink:#ec4899;--slate:#64748b;
   --fb:'Inter',-apple-system,sans-serif;--fm:'JetBrains Mono',monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -29,93 +29,95 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hdr-r{display:flex;align-items:center;gap:6px;}
 .btn{padding:6px 12px;border:1px solid var(--brd);background:var(--bgH);color:var(--t3);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.04em;transition:all .15s;white-space:nowrap;text-decoration:none;}
 .btn:hover{border-color:var(--acc);color:var(--acc);background:var(--accG);}
-
-/* Controls bar */
-.controls{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--brd2);flex-wrap:wrap;}
-.ctrl-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);}
-.ctrl-sel{font-family:var(--fm);font-size:11px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:5px 8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;}
-.ctrl-sel:focus{outline:none;border-color:var(--acc);}
+.controls{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--bg3);border-bottom:1px solid var(--brd2);flex-wrap:wrap;}
+.ctrl-grp{display:flex;align-items:center;gap:4px;}
+.ctrl-label{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t6);}
+.ctrl-sel,.ctrl-date{font-family:var(--fm);font-size:10px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:5px 8px;cursor:pointer;appearance:none;-webkit-appearance:none;}
+.ctrl-sel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;}
 .ctrl-sel option{background:var(--bg2);color:var(--t1);}
-.ctrl-date{font-family:var(--fm);font-size:11px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:5px 8px;color-scheme:dark;}
-.ctrl-date:focus{outline:none;border-color:var(--acc);}
+.ctrl-date{color-scheme:dark;}
+.ctrl-sel:focus,.ctrl-date:focus{outline:none;border-color:var(--acc);}
 .view-tog{display:flex;background:var(--bgH);border-radius:6px;padding:3px;gap:2px;}
-.view-btn{padding:6px 14px;border:none;border-radius:4px;background:transparent;color:var(--t4);font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--fb);transition:all .15s;}
+.view-btn{padding:5px 12px;border:none;border-radius:4px;background:transparent;color:var(--t4);font-size:10px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--fb);transition:all .15s;}
 .view-btn.on{background:var(--acc);color:var(--bg0);}
 .view-btn:hover:not(.on){background:var(--brd);color:var(--t3);}
-
-/* Dashboard content */
-.dash{padding:20px;position:relative;z-index:1;}
-.section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);margin-bottom:12px;}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:24px;}
-.card{background:var(--bg2);border:1px solid var(--brd2);padding:14px 16px;position:relative;}
-.card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;opacity:.3;}
-.card.hl::before{opacity:1;}
-.card-label{font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);font-weight:600;margin-bottom:6px;}
-.card-val{font-family:var(--fm);font-size:22px;font-weight:600;color:var(--t1);}
-.card-val.g{color:var(--acc);}
-.card-val.b{color:var(--blue);}
-.card-val.r{color:var(--red);}
-.card-val.o{color:var(--orange);}
-.card-sub{font-size:10px;color:var(--t5);margin-top:2px;font-family:var(--fm);}
-
-/* Table */
-.tbl-wrap{background:var(--bg2);border:1px solid var(--brd2);overflow-x:auto;margin-bottom:24px;}
-.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--brd2);background:var(--bg1);}
-.tbl-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);}
-table{width:100%;border-collapse:collapse;min-width:800px;}
-thead th{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t5);padding:8px 10px;text-align:left;border-bottom:1px solid var(--brd);background:var(--bg1);white-space:nowrap;position:sticky;top:0;}
-thead th.num{text-align:right;}
+.dash{padding:20px;position:relative;z-index:1;max-width:1400px;margin:0 auto;}
+.sec-title{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);margin:24px 0 10px;display:flex;align-items:center;gap:8px;}
+.sec-title:first-child{margin-top:0;}
+.sec-line{flex:1;height:1px;background:var(--brd2);}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:4px;}
+.card{background:var(--bg2);border:1px solid var(--brd2);padding:14px 16px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--brd2);opacity:.3;}
+.card.hl::before{background:var(--acc);opacity:1;}
+.card-label{font-size:7px;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);font-weight:600;margin-bottom:4px;}
+.card-val{font-family:var(--fm);font-size:20px;font-weight:700;color:var(--t1);}
+.card-val.g{color:var(--acc);}.card-val.b{color:var(--blue);}.card-val.r{color:var(--red);}.card-val.o{color:var(--orange);}.card-val.p{color:var(--purple);}.card-val.c{color:var(--cyan);}
+.champ{background:linear-gradient(135deg,var(--accG),transparent);border:1px solid rgba(211,251,64,.2);padding:16px 24px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.champ-crown{font-size:36px;}.champ-info{text-align:center;}
+.champ-name{font-size:18px;font-weight:800;color:var(--acc);}
+.champ-stats{font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:2px;}
+.tbl-wrap{background:var(--bg2);border:1px solid var(--brd2);overflow-x:auto;margin-bottom:16px;}
+.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--brd2);background:var(--bg1);}
+.tbl-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);}
+table{width:100%;border-collapse:collapse;min-width:900px;}
+thead th{font-size:7px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t5);padding:8px 8px;text-align:left;border-bottom:1px solid var(--brd);background:var(--bg1);white-space:nowrap;}
+thead th.r{text-align:right;}
 tbody tr{border-bottom:1px solid #1a1a22;transition:background .1s;}
 tbody tr:hover{background:var(--bgH);}
-tbody td{padding:8px 10px;font-size:12px;color:var(--t2);}
-tbody td.num{text-align:right;font-family:var(--fm);font-size:11px;}
-tbody td.name{font-weight:600;color:var(--t1);}
-tbody td.g{color:var(--acc);}
-tbody td.r{color:var(--red);}
-
-/* Empty state */
-.empty{text-align:center;padding:60px 20px;color:var(--t5);}
-.empty-icon{font-size:40px;margin-bottom:12px;}
-.empty-text{font-size:13px;}
-
-/* Login */
-.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg0);padding:20px;}
-.login-box{width:100%;max-width:380px;background:var(--bg1);border:1px solid var(--brd);padding:36px 32px 32px;}
-.login-hdr{padding:0 0 16px;text-align:center;border-bottom:1px solid var(--brd2);margin-bottom:20px;}
-.login-title{font-size:16px;font-weight:700;color:var(--t1);margin-top:12px;}
+tbody td{padding:7px 8px;font-size:12px;color:var(--t2);}
+tbody td.r{text-align:right;font-family:var(--fm);font-size:11px;}
+tbody td.nm{font-weight:600;color:var(--t1);}
+tbody td.g{color:var(--acc);}.tbody td.rd{color:var(--red);}
+.rate{font-family:var(--fm);font-size:11px;font-weight:600;padding:2px 6px;display:inline-block;}
+.rate.good{color:var(--green);background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);}
+.rate.mid{color:var(--orange);background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);}
+.rate.bad{color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);}
+.eod-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.eod-modal{background:var(--bg1);border:1px solid var(--brd);width:700px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.eod-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--brd2);}
+.eod-title{font-size:12px;font-weight:700;color:var(--t1);text-transform:uppercase;letter-spacing:0.04em;}
+.close-x{background:none;border:none;color:var(--t5);font-size:16px;cursor:pointer;padding:4px 8px;}.close-x:hover{color:var(--t1);}
+.eod-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a1a22;font-size:11px;}
+.eod-row:last-child{border:none;}
+.eod-label{color:var(--t4);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-size:9px;}
+.eod-val{font-family:var(--fm);color:var(--t1);}
+.empty{text-align:center;padding:80px 20px;color:var(--t5);}
+.empty-icon{font-size:48px;margin-bottom:12px;}.empty-text{font-size:13px;}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg0);}
+.login-box{width:380px;max-width:92vw;background:var(--bg1);border:1px solid var(--brd);}
+.login-hdr{padding:28px 28px 16px;text-align:center;border-bottom:1px solid var(--brd2);}
+.login-title{font-size:15px;font-weight:700;color:var(--t1);margin-top:12px;}
 .login-sub{font-size:11px;color:var(--t4);margin-top:4px;}
-.login-field{margin-bottom:14px;}
+.login-body{padding:20px 28px;}
+.login-field{margin-bottom:12px;}
 .login-field label{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t5);margin-bottom:4px;}
-.login-field input{width:100%;font-family:var(--fb);font-size:12px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:10px 12px;outline:none;}
+.login-field input{width:100%;font-family:var(--fb);font-size:12px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:9px 11px;outline:none;}
 .login-field input:focus{border-color:var(--acc);}
 .login-btn{width:100%;padding:10px;border:1px solid var(--acc);background:var(--acc);color:var(--bg0);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:.04em;}
-.login-btn:hover{background:#e4ff6a;}
+.login-btn:hover{background:#e4ff6a;}.login-btn:disabled{opacity:.5;}
 .login-err{font-size:11px;color:var(--red);margin-top:8px;display:none;}
 .login-loading{text-align:center;padding:20px;color:var(--t4);font-size:12px;display:none;}
-
-@media(max-width:768px){.cards{grid-template-columns:repeat(2,1fr);}.controls{gap:8px;}}
+@media(max-width:768px){.cards{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:500px){.cards{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
-
 <div id="login-screen" class="login-wrap">
   <div class="login-box">
     <div class="login-hdr">
       <svg width="36" height="36" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
       <div class="login-title">DA Insights</div>
-      <div class="login-sub">Sign in to view reports.</div>
+      <div class="login-sub">Sign in to view analytics.</div>
     </div>
-    <div id="loginForm">
+    <div id="loginForm" class="login-body">
       <div class="login-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@dealershipaccelerator.io"></div>
       <div class="login-field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
-      <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <button class="login-btn" onclick="doLogin()">Sign In</button>
       <div class="login-err" id="loginErr"></div>
     </div>
-    <div class="login-loading" id="loginLoading">Loading insights...</div>
+    <div class="login-loading" id="loginLoading">Loading...</div>
   </div>
 </div>
-
 <div id="app" style="display:none">
 <div class="hdr">
   <div class="hdr-l">
@@ -128,272 +130,279 @@ tbody td.r{color:var(--red);}
   </div>
   <div class="hdr-r">
     <a href="index.html" class="btn">🏠 Home</a>
+    <a href="calendar.html" class="btn">📅 Calendar</a>
     <span style="font-size:10px;color:var(--t5);font-family:var(--fm)" id="userEmail"></span>
     <button class="btn" onclick="doLogout()">Logout</button>
   </div>
 </div>
-
 <div class="controls">
-  <div><span class="ctrl-label">From</span> <input type="date" class="ctrl-date" id="dateFrom" onchange="loadReports()"></div>
-  <div><span class="ctrl-label">To</span> <input type="date" class="ctrl-date" id="dateTo" onchange="loadReports()"></div>
+  <div class="ctrl-grp"><span class="ctrl-label">From</span><input type="date" class="ctrl-date" id="dateFrom" onchange="loadAll()"></div>
+  <div class="ctrl-grp"><span class="ctrl-label">To</span><input type="date" class="ctrl-date" id="dateTo" onchange="loadAll()"></div>
   <div class="hdr-div"></div>
-  <div><span class="ctrl-label">Role</span>
-    <select class="ctrl-sel" id="roleFilter" onchange="renderDash()">
-      <option value="all">All</option>
-      <option value="Closer">Closers</option>
-      <option value="SDR">SDRs</option>
-    </select>
-  </div>
-  <div><span class="ctrl-label">Rep</span>
-    <select class="ctrl-sel" id="repFilter" onchange="renderDash()">
-      <option value="all">All Reps</option>
-    </select>
-  </div>
+  <div class="ctrl-grp"><span class="ctrl-label">Role</span>
+    <select class="ctrl-sel" id="roleFilter" onchange="renderAll()">
+      <option value="all">All</option><option value="Closer">Closers</option><option value="Setter">SDRs</option>
+    </select></div>
+  <div class="ctrl-grp"><span class="ctrl-label">Rep</span>
+    <select class="ctrl-sel" id="repFilter" onchange="renderAll()"><option value="all">All Reps</option></select></div>
   <div class="hdr-div"></div>
   <div class="view-tog">
-    <button class="view-btn on" data-v="dept" onclick="setInsightView('dept')">Department</button>
-    <button class="view-btn" data-v="rep" onclick="setInsightView('rep')">By Rep</button>
+    <button class="view-btn on" data-v="team" onclick="setView('team')">Team</button>
+    <button class="view-btn" data-v="rep" onclick="setView('rep')">By Rep</button>
   </div>
+  <div class="hdr-div"></div>
+  <button class="btn" onclick="showEodModal()" style="background:rgba(249,115,22,.06);border-color:rgba(249,115,22,.25);color:var(--orange)">📋 EOD Reports</button>
 </div>
-
-<div class="dash" id="dashContent"></div>
+<div class="dash" id="dashContent"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Loading analytics...</div></div></div>
+<div id="eodContainer"></div>
 </div>
-
 <script>
 const _sb=window.supabase.createClient('https://ygoorvnvwvdygqprkxyf.supabase.co','sb_publishable_kpKWMM2uJgrGSqS_W1CKLQ_uufpskfq');
-let _currentUser=null,_isAdmin=false,_calendarRole='Closer';
-let _reports=[],_profiles=[],_insightView='dept';
+let _user=null,_isAdmin=false,_calRole='Closer';
+let _profiles=[],_calEvents=[],_eodReports=[],_commData=[];
+let _view='team';
+const EXCL_NEW_CASH=new Set(['REFUND','SPLIT PAY 2/2','RECURRING PAYMENT','RENEWAL']);
+const ROOFTOP_TYPES=new Set(['NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2']);
 
-// Auth
 async function doLogin(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  const err=document.getElementById('loginErr');
-  err.style.display='none';
-  if(!email||!pass){err.textContent='Email and password required.';err.style.display='block';return;}
-  document.getElementById('loginBtn').disabled=true;
-  try{
-    const r=await _sb.auth.signInWithPassword({email,password:pass});
-    if(r.error)throw r.error;
-    _currentUser=r.data.user;
-    await enterApp();
-  }catch(e){err.textContent=e.message;err.style.display='block';}
-  document.getElementById('loginBtn').disabled=false;
+  const e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginErr');err.style.display='none';
+  if(!e||!p){err.textContent='Email and password required.';err.style.display='block';return;}
+  try{const r=await _sb.auth.signInWithPassword({email:e,password:p});if(r.error)throw r.error;_user=r.data.user;await enterApp();}
+  catch(x){err.textContent=x.message;err.style.display='block';}
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('loginPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-  checkSession();
-});
-async function checkSession(){
-  const{data:{session}}=await _sb.auth.getSession();
-  if(session?.user){_currentUser=session.user;document.getElementById('loginForm').style.display='none';document.getElementById('loginLoading').style.display='block';await enterApp();}
-}
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('loginPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});checkSession();});
+async function checkSession(){const{data:{session}}=await _sb.auth.getSession();if(session?.user){_user=session.user;document.getElementById('loginForm').style.display='none';document.getElementById('loginLoading').style.display='block';await enterApp();}}
 async function enterApp(){
-  const{data:profile}=await _sb.from('profiles').select('is_admin,calendar_role').eq('id',_currentUser.id).single();
-  _isAdmin=profile?.is_admin===true;
-  _calendarRole=profile?.calendar_role||'Closer';
+  const{data:prof}=await _sb.from('profiles').select('is_admin,calendar_role').eq('id',_user.id).single();
+  _isAdmin=prof?.is_admin===true;_calRole=prof?.calendar_role||'Closer';
   document.getElementById('login-screen').style.display='none';
-  document.getElementById('userEmail').textContent=_currentUser.email;
+  document.getElementById('userEmail').textContent=_user.email;
   document.getElementById('app').style.display='block';
-  // Default date range: this week
-  const now=new Date();const ws=new Date(now);ws.setDate(ws.getDate()-ws.getDay());
-  document.getElementById('dateFrom').value=fmtDate(ws);
-  document.getElementById('dateTo').value=fmtDate(now);
-  await loadProfiles();
-  await loadReports();
+  const now=new Date(),ms=new Date(now.getFullYear(),now.getMonth(),1);
+  document.getElementById('dateFrom').value=fmtD(ms);document.getElementById('dateTo').value=fmtD(now);
+  await loadProfiles();await loadAll();
 }
 async function doLogout(){await _sb.auth.signOut();window.location.href='index.html';}
 
-function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function capName(s){if(!s)return'';return s.replace(/\b\w/g,c=>c.toUpperCase());}
+function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function cap(s){return s?s.replace(/\b\w/g,c=>c.toUpperCase()):'';}
+function pm(s){if(!s)return 0;return parseFloat(String(s).replace(/[^0-9.\-]/g,''))||0;}
+function cur(n){const a=Math.abs(n);const f='$'+a.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');return n<0?'-'+f:f;}
+function pct(n,d){return d?Math.round((n/d)*1000)/10:0;}
+function ratePill(v,good,mid){return '<span class="rate '+(v>=good?'good':v>=mid?'mid':'bad')+'">'+v.toFixed(1)+'%</span>';}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 async function loadProfiles(){
-  const{data}=await _sb.from('profiles').select('id,email,is_admin,calendar_role,display_name');
-  _profiles=(data||[]).map(p=>({id:p.id,email:p.email,name:capName(p.display_name||p.email.split('@')[0]),role:p.calendar_role||'Closer',isAdmin:p.is_admin}));
-  // Populate rep filter
-  const sel=document.getElementById('repFilter');
-  sel.innerHTML='<option value="all">All Reps</option>';
-  if(_isAdmin){
-    _profiles.forEach(p=>{sel.innerHTML+='<option value="'+p.id+'">'+p.name+' ('+p.role+')</option>';});
-  }else{
-    sel.innerHTML+='<option value="'+_currentUser.id+'" selected>My Reports</option>';
-  }
+  const{data}=await _sb.from('profiles').select('id,email,is_admin,calendar_role,display_name,calendar_color');
+  _profiles=(data||[]).map(p=>({id:p.id,email:p.email,name:cap(p.display_name||p.email.split('@')[0]),role:p.calendar_role||'Closer',color:p.calendar_color||'#3b82f6',isAdmin:p.is_admin}));
+  const sel=document.getElementById('repFilter');sel.innerHTML='<option value="all">All Reps</option>';
+  if(_isAdmin)_profiles.forEach(p=>{sel.innerHTML+='<option value="'+p.id+'">'+esc(p.name)+'</option>';});
+  else sel.innerHTML+='<option value="'+_user.id+'" selected>My Data</option>';
 }
 
-async function loadReports(){
-  const from=document.getElementById('dateFrom').value;
-  const to=document.getElementById('dateTo').value;
-  if(!from||!to)return;
-  let q=_sb.from('eod_reports').select('*').gte('date',from).lte('date',to);
-  if(!_isAdmin)q=q.eq('user_id',_currentUser.id);
-  const{data}=await q.order('date',{ascending:false});
-  _reports=data||[];
-  renderDash();
+async function loadAll(){
+  const from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;if(!from||!to)return;
+  const{data:evts}=await _sb.from('calendar_events').select('*').gte('date',from).lte('date',to);
+  _calEvents=evts||[];
+  let q2=_sb.from('eod_reports').select('*').gte('date',from).lte('date',to);
+  if(!_isAdmin)q2=q2.eq('user_id',_user.id);
+  const{data:eods}=await q2;_eodReports=eods||[];
+  if(_isAdmin){const{data:cd}=await _sb.from('commission_data').select('user_id,state');_commData=cd||[];}
+  else{const{data:cd}=await _sb.from('commission_data').select('user_id,state').eq('user_id',_user.id);_commData=cd||[];}
+  renderAll();
 }
 
-function setInsightView(v){
-  _insightView=v;
-  document.querySelectorAll('.view-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  renderDash();
+function getAllCommRows(from,to){
+  let all=[];
+  _commData.forEach(cd=>{if(!cd.state)return;
+    Object.keys(cd.state).forEach(yr=>{Object.keys(cd.state[yr]).forEach(tid=>{
+      const tab=cd.state[yr][tid];if(!tab||!tab.rows)return;
+      tab.rows.forEach(r=>{if(!r.dt||!r.paid)return;if(r.dt>=from&&r.dt<=to)all.push({...r,_uid:cd.user_id});});
+    });});
+  });return all;
 }
 
-function getFilteredReports(){
-  let r=_reports;
-  const role=document.getElementById('roleFilter').value;
-  const rep=document.getElementById('repFilter').value;
-  if(role!=='all')r=r.filter(x=>x.role===role);
-  if(rep!=='all')r=r.filter(x=>x.user_id===rep);
-  return r;
+function getF(){
+  const role=document.getElementById('roleFilter').value,rep=document.getElementById('repFilter').value;
+  let evts=_calEvents.slice();
+  if(!_isAdmin)evts=evts.filter(e=>e.closer_id===_user.id||e.sdr_id===_user.id);
+  if(rep!=='all')evts=evts.filter(e=>e.closer_id===rep||e.sdr_id===rep);
+  else if(role!=='all'){const uids=_profiles.filter(p=>p.role===role).map(p=>p.id);evts=evts.filter(e=>uids.includes(e.closer_id)||uids.includes(e.sdr_id));}
+  const from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
+  let comm=getAllCommRows(from,to);
+  if(!_isAdmin)comm=comm.filter(r=>r._uid===_user.id);
+  if(rep!=='all')comm=comm.filter(r=>r._uid===rep);
+  else if(role!=='all'){const uids=_profiles.filter(p=>p.role===role).map(p=>p.id);comm=comm.filter(r=>uids.includes(r._uid));}
+  let eod=_eodReports.slice();
+  if(rep!=='all')eod=eod.filter(r=>r.user_id===rep);
+  else if(role!=='all')eod=eod.filter(r=>r.role===(role==='Setter'?'SDR':role));
+  return{evts,comm,eod};
 }
 
-function sum(arr,field){return arr.reduce((s,x)=>s+(x[field]||0),0);}
+function setView(v){_view=v;document.querySelectorAll('.view-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===v));renderAll();}
 
-function renderDash(){
+function renderAll(){
   const el=document.getElementById('dashContent');
-  const reports=getFilteredReports();
-  if(!reports.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No EOD reports found for this date range and filter.</div></div>';
-    return;
-  }
-  if(_insightView==='dept')el.innerHTML=renderDeptView(reports);
-  else el.innerHTML=renderRepView(reports);
+  const{evts,comm,eod}=getF();
+  if(!evts.length&&!comm.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No data found for this date range.</div></div>';return;}
+  el.innerHTML=_view==='team'?renderTeam(evts,comm,eod):renderByRep(evts,comm,eod);
 }
 
-function renderDeptView(reports){
-  const days=new Set(reports.map(r=>r.date)).size;
-  let h='<div class="section-title">Department Overview — '+days+' day'+(days!==1?'s':'')+'</div>';
+function renderTeam(evts,comm,eod){
+  let h='';
+  const totalRev=comm.reduce((s,r)=>s+pm(r.ca),0);
+  const newCash=comm.filter(r=>!EXCL_NEW_CASH.has(r.tp)).reduce((s,r)=>s+pm(r.ca),0);
+  const rooftops=comm.filter(r=>ROOFTOP_TYPES.has(r.tp)).length;
+  const avgDeal=rooftops?totalRev/rooftops:0;
 
-  // Top-level cards
-  h+='<div class="cards">';
-  h+=card('Total Reports',reports.length,'');
-  h+=card('Demos Scheduled',sum(reports,'inbound_demos_scheduled')+sum(reports,'outbound_demos_scheduled'),'b');
-  h+=card('Demos Showed',sum(reports,'demos_showed'),'g');
-  h+=card('Demos No-Show',sum(reports,'demos_no_show'),'r');
-  h+=card('Demos Cancelled',sum(reports,'demos_cancelled'),'');
-  h+=card('Demos Rescheduled',sum(reports,'demos_rescheduled'),'o');
-  h+='</div>';
+  // Champion
+  const byU={};comm.forEach(r=>{byU[r._uid]=(byU[r._uid]||0)+pm(r.ca);});
+  let cId=null,cRev=0;Object.entries(byU).forEach(([u,v])=>{if(v>cRev){cRev=v;cId=u;}});
+  if(cId&&cRev>0){const cp=_profiles.find(p=>p.id===cId);const cd=comm.filter(r=>r._uid===cId&&ROOFTOP_TYPES.has(r.tp)).length;
+    h+='<div class="champ"><span class="champ-crown">👑</span><div class="champ-info"><div class="champ-name">'+(cp?esc(cp.name):'—')+'</div><div class="champ-stats">'+cur(cRev)+' Revenue · '+cd+' Deals</div></div></div>';}
 
-  h+='<div class="cards">';
-  h+=card('Collabs Scheduled',sum(reports,'inbound_collabs_scheduled'),'b');
-  h+=card('Collabs Showed',sum(reports,'collabs_showed'),'g');
-  h+=card('Collabs No-Show',sum(reports,'collabs_no_show'),'r');
-  h+=card('Collabs Cancelled',sum(reports,'collabs_cancelled'),'');
-  h+='</div>';
+  h+=secT('Executive Summary');
+  h+='<div class="cards">'+card('Total Revenue',cur(totalRev),'g',1)+card('New Cash Collected',cur(newCash),'g')+card('Total Rooftops',rooftops,'')+card('Avg Deal Value',cur(avgDeal),'p')+'</div>';
 
-  h+='<div class="cards">';
-  h+=card('Sales Units',sum(reports,'sales_units'),'g');
-  h+=card('Contract Value','$'+sum(reports,'total_contract_value').toLocaleString('en-US',{minimumFractionDigits:2}),'g');
-  h+=card('Cash Collected','$'+sum(reports,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2}),'g');
-  h+='</div>';
+  // Pipeline
+  const demos=evts.filter(e=>e.type==='demo'),leds=evts.filter(e=>e.type==='led'),syncs=evts.filter(e=>e.type==='sync');
+  const ds=demos.length,dShowed=demos.filter(e=>e.outcome==='showed'||e.outcome==='sale').length;
+  const dNS=demos.filter(e=>e.outcome==='no-show').length,dC=demos.filter(e=>e.outcome==='cancelled').length;
+  const dR=demos.filter(e=>e.outcome==='rescheduled').length;
+  const ls=leds.length,lShowed=leds.filter(e=>e.outcome==='showed'||e.outcome==='sale').length;
+  const lNS=leds.filter(e=>e.outcome==='no-show').length,lC=leds.filter(e=>e.outcome==='cancelled').length;
+  const ss=syncs.length,sShowed=syncs.filter(e=>e.outcome==='showed'||e.outcome==='sale').length;
+  const sNS=syncs.filter(e=>e.outcome==='no-show').length;
+  const sales=evts.filter(e=>e.outcome==='sale').length;
+  const dSR=pct(dShowed,ds),lSR=pct(lShowed,ls),sSR=pct(sShowed,ss);
+  const d2c=pct(leds.length,demos.length);
+  const closeRate=pct(sales,lShowed);
+  const btc=pct(sales,ds);
 
-  // Show rates
-  const totalDemos=sum(reports,'inbound_demos_scheduled')+sum(reports,'outbound_demos_scheduled');
-  const demoShowRate=totalDemos?Math.round((sum(reports,'demos_showed')/totalDemos)*100):0;
-  const totalCollabs=sum(reports,'inbound_collabs_scheduled');
-  const collabShowRate=totalCollabs?Math.round((sum(reports,'collabs_showed')/totalCollabs)*100):0;
+  h+=secT('Pipeline Rates');
+  h+='<div class="cards">'+card('Demo Show Rate',dSR.toFixed(1)+'%',dSR>=60?'g':dSR>=40?'o':'r')
+    +card('Demo No-Show',pct(dNS,ds).toFixed(1)+'%',pct(dNS,ds)<=15?'g':pct(dNS,ds)<=30?'o':'r')
+    +card('Demo Cancel',pct(dC,ds).toFixed(1)+'%','')
+    +card('Demo Reschedule',pct(dR,ds).toFixed(1)+'%','o')
+    +card('Demo → Collab',d2c.toFixed(1)+'%',d2c>=30?'g':'o')+'</div>';
+  h+='<div class="cards">'+card('Collab Show Rate',lSR.toFixed(1)+'%',lSR>=60?'g':lSR>=40?'o':'r')
+    +card('Collab No-Show',pct(lNS,ls).toFixed(1)+'%','')
+    +card('Collab Cancel',pct(lC,ls).toFixed(1)+'%','')
+    +card('Sync Show Rate',sSR.toFixed(1)+'%',sSR>=60?'g':'o')
+    +card('Sync No-Show',pct(sNS,ss).toFixed(1)+'%','')+'</div>';
+  h+='<div class="cards">'+card('Team Close Rate',closeRate.toFixed(1)+'%',closeRate>=40?'g':closeRate>=20?'o':'r',1)
+    +card('Booked-to-Close',btc.toFixed(1)+'%',btc>=15?'g':'o',1)
+    +card('Total Sales',sales,'g')+'</div>';
 
-  h+='<div class="cards">';
-  h+=card('Demo Show Rate',demoShowRate+'%',demoShowRate>=60?'g':'r',null);
-  h+=card('Collab Show Rate',collabShowRate+'%',collabShowRate>=60?'g':'r',null);
-  h+=card('Outbound Dials',sum(reports,'outbound_dials'),'');
-  h+=card('Meaningful Convos',sum(reports,'meaningful_conversations'),'');
-  h+='</div>';
+  // Inbound/Outbound
+  const inD=evts.filter(e=>e.type==='demo'&&e.source!=='outbound'),outD=evts.filter(e=>e.type==='demo'&&e.source==='outbound');
+  const inL=evts.filter(e=>e.type==='led'&&e.source!=='outbound'),outL=evts.filter(e=>e.type==='led'&&e.source==='outbound');
+  h+=secT('Inbound vs Outbound');
+  h+='<div class="cards">'+card('Inbound Demos',inD.length,'b')+card('Outbound Demos',outD.length,'c')
+    +card('Inbound Collabs',inL.length,'b')+card('Outbound Collabs',outL.length,'c')+'</div>';
 
-  // Daily breakdown table
-  const byDate={};
-  reports.forEach(r=>{if(!byDate[r.date])byDate[r.date]={reports:[],date:r.date};byDate[r.date].reports.push(r);});
-  const dates=Object.keys(byDate).sort().reverse();
+  // EOD aggregates
+  if(eod.length){h+=secT('EOD Aggregates ('+eod.length+' reports)');
+    h+='<div class="cards">'+card('Outbound Dials',eod.reduce((s,r)=>s+(r.outbound_dials||0),0),'')
+      +card('Meaningful Convos',eod.reduce((s,r)=>s+(r.meaningful_conversations||0),0),'')
+      +card('Personal Collabs',eod.reduce((s,r)=>s+(r.personal_collabs_calendar||0),0),'')
+      +card('Personal Closed',eod.reduce((s,r)=>s+(r.personal_collabs_closed||0),0),'g')+'</div>';}
 
-  h+='<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-title">Daily Breakdown</span></div>';
-  h+='<table><thead><tr>';
-  h+='<th>Date</th><th class="num">Reports</th><th class="num">Demos Sched</th><th class="num">Showed</th><th class="num">No-Show</th>';
-  h+='<th class="num">Collabs Sched</th><th class="num">Showed</th><th class="num">Sales</th><th class="num">Cash</th>';
-  h+='</tr></thead><tbody>';
-  dates.forEach(d=>{
-    const dr=byDate[d].reports;
-    h+='<tr><td class="name">'+d+'</td>';
-    h+='<td class="num">'+dr.length+'</td>';
-    h+='<td class="num">'+(sum(dr,'inbound_demos_scheduled')+sum(dr,'outbound_demos_scheduled'))+'</td>';
-    h+='<td class="num g">'+sum(dr,'demos_showed')+'</td>';
-    h+='<td class="num r">'+sum(dr,'demos_no_show')+'</td>';
-    h+='<td class="num">'+sum(dr,'inbound_collabs_scheduled')+'</td>';
-    h+='<td class="num g">'+sum(dr,'collabs_showed')+'</td>';
-    h+='<td class="num g">'+sum(dr,'sales_units')+'</td>';
-    h+='<td class="num g">$'+sum(dr,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2})+'</td>';
-    h+='</tr>';
+  // Volume table
+  h+=secT('Volume Breakdown');
+  h+='<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-title">Call Type Metrics</span></div>';
+  h+='<table><thead><tr><th>Type</th><th class="r">Scheduled</th><th class="r">Showed</th><th class="r">No-Show</th><th class="r">Cancel</th><th class="r">Resched</th><th class="r">Sale</th><th class="r">Show Rate</th></tr></thead><tbody>';
+  [{l:'Demo Calls',e:demos},{l:'Collab Calls',e:leds},{l:'Sync Calls',e:syncs}].forEach(g=>{
+    const sc=g.e.length,sh=g.e.filter(e=>e.outcome==='showed'||e.outcome==='sale').length;
+    const ns=g.e.filter(e=>e.outcome==='no-show').length,cn=g.e.filter(e=>e.outcome==='cancelled').length;
+    const rs=g.e.filter(e=>e.outcome==='rescheduled').length,sl=g.e.filter(e=>e.outcome==='sale').length;
+    h+='<tr><td class="nm">'+g.l+'</td><td class="r">'+sc+'</td><td class="r" style="color:var(--green)">'+sh+'</td><td class="r" style="color:var(--red)">'+ns+'</td>';
+    h+='<td class="r">'+cn+'</td><td class="r">'+rs+'</td><td class="r" style="color:var(--green)">'+sl+'</td><td class="r">'+ratePill(pct(sh,sc),60,40)+'</td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
 }
 
-function renderRepView(reports){
-  const byUser={};
-  reports.forEach(r=>{if(!byUser[r.user_id])byUser[r.user_id]={reports:[],id:r.user_id};byUser[r.user_id].reports.push(r);});
+function renderByRep(evts,comm,eod){
+  const uids=new Set();
+  evts.forEach(e=>{if(e.closer_id)uids.add(e.closer_id);if(e.sdr_id)uids.add(e.sdr_id);});
+  comm.forEach(r=>{if(r._uid)uids.add(r._uid);});
 
-  let h='<div class="section-title">Rep Breakdown</div>';
-  h+='<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-title">Performance by Rep</span></div>';
-  h+='<table><thead><tr>';
-  h+='<th>Name</th><th>Role</th><th class="num">Days</th><th class="num">Demos Sched</th><th class="num">Showed</th><th class="num">Show %</th>';
-  h+='<th class="num">Collabs Sched</th><th class="num">Showed</th><th class="num">Sales</th><th class="num">Cash</th><th class="num">Dials</th>';
-  h+='</tr></thead><tbody>';
-
-  Object.values(byUser).forEach(u=>{
-    const p=_profiles.find(x=>x.id===u.id);
-    const name=p?p.name:u.id;
-    const role=u.reports[0]?.role||'';
-    const dr=u.reports;
-    const totalDemos=sum(dr,'inbound_demos_scheduled')+sum(dr,'outbound_demos_scheduled');
-    const showRate=totalDemos?Math.round((sum(dr,'demos_showed')/totalDemos)*100):0;
-    h+='<tr>';
-    h+='<td class="name">'+name+'</td>';
-    h+='<td>'+role+'</td>';
-    h+='<td class="num">'+dr.length+'</td>';
-    h+='<td class="num">'+totalDemos+'</td>';
-    h+='<td class="num g">'+sum(dr,'demos_showed')+'</td>';
-    h+='<td class="num '+(showRate>=60?'g':'r')+'">'+showRate+'%</td>';
-    h+='<td class="num">'+sum(dr,'inbound_collabs_scheduled')+'</td>';
-    h+='<td class="num g">'+sum(dr,'collabs_showed')+'</td>';
-    h+='<td class="num g">'+sum(dr,'sales_units')+'</td>';
-    h+='<td class="num g">$'+sum(dr,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2})+'</td>';
-    h+='<td class="num">'+sum(dr,'outbound_dials')+'</td>';
-    h+='</tr>';
+  let h=secT('Rep Performance');
+  h+='<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-title">Individual Breakdown</span></div>';
+  h+='<table><thead><tr><th>Rep</th><th>Role</th><th class="r">Revenue</th><th class="r">Cash</th><th class="r">Deals</th>';
+  h+='<th class="r">Demo Show%</th><th class="r">Collab Show%</th><th class="r">Close Rate</th><th class="r">Avg Deal</th></tr></thead><tbody>';
+  [...uids].forEach(uid=>{
+    const p=_profiles.find(x=>x.id===uid);if(!p)return;
+    const ue=evts.filter(e=>e.closer_id===uid||e.sdr_id===uid);
+    const uc=comm.filter(r=>r._uid===uid);
+    const rev=uc.reduce((s,r)=>s+pm(r.ca),0),cash=uc.filter(r=>!EXCL_NEW_CASH.has(r.tp)).reduce((s,r)=>s+pm(r.ca),0);
+    const deals=uc.filter(r=>ROOFTOP_TYPES.has(r.tp)).length;
+    const ud=ue.filter(e=>e.type==='demo'),ul=ue.filter(e=>e.type==='led'),us=ue.filter(e=>e.type==='sync');
+    const dsr=pct(ud.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,ud.length);
+    const lsr=pct(ul.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,ul.length);
+    const sales=ue.filter(e=>e.outcome==='sale').length;
+    const closeBase=p.role==='Setter'?ud.length:ud.length+ul.length+us.length;
+    const cr=pct(sales,closeBase);const avg=deals?rev/deals:0;
+    h+='<tr><td class="nm">'+esc(p.name)+'</td><td>'+p.role+'</td>';
+    h+='<td class="r" style="color:var(--acc)">'+cur(rev)+'</td><td class="r" style="color:var(--acc)">'+cur(cash)+'</td><td class="r">'+deals+'</td>';
+    h+='<td class="r">'+ratePill(dsr,60,40)+'</td><td class="r">'+ratePill(lsr,60,40)+'</td>';
+    h+='<td class="r">'+ratePill(cr,40,20)+'</td><td class="r">'+cur(avg)+'</td></tr>';
   });
   h+='</tbody></table></div>';
 
-  // Individual detailed cards for each rep
-  Object.values(byUser).forEach(u=>{
-    const p=_profiles.find(x=>x.id===u.id);
-    const name=p?p.name:u.id;
-    const role=u.reports[0]?.role||'';
-    const dr=u.reports;
-    h+='<div class="section-title" style="margin-top:20px">'+name+' — '+role+' ('+dr.length+' report'+(dr.length!==1?'s':'')+')</div>';
+  // Individual detail cards
+  [...uids].forEach(uid=>{
+    const p=_profiles.find(x=>x.id===uid);if(!p)return;
+    const ue=evts.filter(e=>e.closer_id===uid||e.sdr_id===uid),uc=comm.filter(r=>r._uid===uid),ueod=eod.filter(r=>r.user_id===uid);
+    const d=ue.filter(e=>e.type==='demo'),l=ue.filter(e=>e.type==='led'),s=ue.filter(e=>e.type==='sync');
+    const rev=uc.reduce((s,r)=>s+pm(r.ca),0),deals=uc.filter(r=>ROOFTOP_TYPES.has(r.tp)).length;
+    h+=secT(esc(p.name)+' — '+p.role);
     h+='<div class="cards">';
-    if(role==='SDR'){
-      h+=card('Inbound Demos',sum(dr,'inbound_demos_scheduled'),'b');
-      h+=card('Outbound Demos',sum(dr,'outbound_demos_scheduled'),'');
-      h+=card('Showed',sum(dr,'demos_showed'),'g');
-      h+=card('Outbound Dials',sum(dr,'outbound_dials'),'');
-      h+=card('Meaningful Convos',sum(dr,'meaningful_conversations'),'');
-      h+=card('Personal Collabs',sum(dr,'personal_collabs_calendar'),'');
-      h+=card('Closed Sets',sum(dr,'sales_units'),'g');
-    }else{
-      h+=card('Demos Scheduled',sum(dr,'inbound_demos_scheduled'),'b');
-      h+=card('Demos Showed',sum(dr,'demos_showed'),'g');
-      h+=card('Collabs Scheduled',sum(dr,'inbound_collabs_scheduled'),'b');
-      h+=card('Collabs Showed',sum(dr,'collabs_showed'),'g');
-      h+=card('Syncs Scheduled',sum(dr,'syncs_scheduled'),'');
-      h+=card('Sales',sum(dr,'sales_units'),'g');
-      h+=card('Cash','$'+sum(dr,'total_cash_collected').toLocaleString('en-US',{minimumFractionDigits:2}),'g');
-    }
+    h+=card('Revenue',cur(rev),'g');h+=card('Deals',deals,'');
+    h+=card('Demos',d.length,'b');h+=card('Demo Show%',pct(d.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,d.length).toFixed(1)+'%','');
+    h+=card('Collabs',l.length,'b');h+=card('Collab Show%',pct(l.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,l.length).toFixed(1)+'%','');
+    if(p.role!=='Setter'){h+=card('Syncs',s.length,'');h+=card('Sync Show%',pct(s.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,s.length).toFixed(1)+'%','');}
+    h+=card('Sales',ue.filter(e=>e.outcome==='sale').length,'g');
+    if(p.role==='Setter'&&ueod.length){h+=card('Outbound Dials',ueod.reduce((s,r)=>s+(r.outbound_dials||0),0),'');h+=card('Meaningful Convos',ueod.reduce((s,r)=>s+(r.meaningful_conversations||0),0),'');}
     h+='</div>';
   });
-
   return h;
 }
 
-function card(label,val,cls,sub){
-  return '<div class="card'+(cls==='g'?' hl':'')+'"><div class="card-label">'+label+'</div><div class="card-val'+(cls?' '+cls:'')+'">'+val+'</div>'+(sub?'<div class="card-sub">'+sub+'</div>':'')+'</div>';
+function secT(t){return '<div class="sec-title">'+t+'<div class="sec-line"></div></div>';}
+function card(l,v,c,hl){return '<div class="card'+(hl?' hl':'')+'"><div class="card-label">'+l+'</div><div class="card-val'+(c?' '+c:'')+'">'+v+'</div></div>';}
+
+// EOD Modal
+function showEodModal(){
+  const{eod}=getF();const mc=document.getElementById('eodContainer');
+  let h='<div class="eod-overlay" onclick="closeEod()"><div class="eod-modal" onclick="event.stopPropagation()">';
+  h+='<div class="eod-hdr"><span class="eod-title">📋 EOD Reports ('+eod.length+')</span><button class="close-x" onclick="closeEod()">✕</button></div>';
+  if(!eod.length)h+='<div style="text-align:center;padding:40px;color:var(--t5)">No EOD reports found.</div>';
+  else{eod.sort((a,b)=>b.date.localeCompare(a.date));eod.forEach(r=>{
+    const p=_profiles.find(x=>x.id===r.user_id);
+    h+='<div style="border:1px solid var(--brd2);margin:8px 12px;background:var(--bg2)">';
+    h+='<div style="padding:8px 12px;border-bottom:1px solid var(--brd2);display:flex;justify-content:space-between;background:var(--bg3)">';
+    h+='<span style="font-size:12px;font-weight:600;color:var(--t1)">'+(p?esc(p.name):'—')+'</span>';
+    h+='<span style="font-family:var(--fm);font-size:10px;color:var(--t5)">'+r.date+' · '+r.role+'</span></div>';
+    h+='<div style="padding:8px 12px;display:grid;grid-template-columns:1fr 1fr;gap:1px 12px">';
+    if(r.role==='SDR'){h+=er('Inbound Demos',r.inbound_demos_scheduled)+er('Showed',r.demos_showed)+er('No-Show',r.demos_no_show)+er('Cancelled',r.demos_cancelled)
+      +er('Outbound Demos',r.outbound_demos_scheduled)+er('Outbound Showed',r.outbound_demos_showed)+er('Dials',r.outbound_dials)+er('Meaningful',r.meaningful_conversations)
+      +er('Personal Collabs',r.personal_collabs_calendar)+er('Personal Closed',r.personal_collabs_closed)+er('Lead Quality',r.lead_quality?'Stage '+r.lead_quality:'—');}
+    else{h+=er('Demos Sched',r.inbound_demos_scheduled)+er('Showed',r.demos_showed)+er('No-Show',r.demos_no_show)+er('Cancelled',r.demos_cancelled)
+      +er('Collabs Sched',r.inbound_collabs_scheduled)+er('Collabs Showed',r.collabs_showed)+er('Syncs Sched',r.syncs_scheduled)+er('Syncs Showed',r.syncs_showed)+er('Sales',r.sales_units);}
+    h+=er('Cash',r.total_cash_collected?cur(r.total_cash_collected):'—')+er('Drafts',r.drafts_updated);
+    h+='</div>';
+    if(r.feedback)h+='<div style="padding:6px 12px;border-top:1px solid var(--brd2);font-size:10px;color:var(--t4)"><b style="color:var(--t3)">Feedback:</b> '+esc(r.feedback)+'</div>';
+    if(r.stuck_on)h+='<div style="padding:6px 12px;border-top:1px solid var(--brd2);font-size:10px;color:var(--t4)"><b style="color:var(--t3)">Stuck:</b> '+esc(r.stuck_on)+'</div>';
+    h+='</div>';
+  });}
+  h+='</div></div>';mc.innerHTML=h;
 }
+function er(l,v){return '<div class="eod-row"><span class="eod-label">'+l+'</span><span class="eod-val">'+(v!=null?v:'—')+'</span></div>';}
+function closeEod(){document.getElementById('eodContainer').innerHTML='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEod();});
 </script>
 </body>
 </html>
