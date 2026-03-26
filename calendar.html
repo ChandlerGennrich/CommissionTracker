@@ -725,7 +725,7 @@ async function logDraftAndOpenClose(evtId){
     const customTypeId=evt.outcome==='sale'?CLOSE_SALE_ACTIVITY:(CLOSE_CUSTOM_ACTIVITY[evt.type]||null);
 
     if(customTypeId){
-      // Log custom activity to Close CRM
+      // Log ONLY custom activity — no note
       try{
         const {data,error}=await _sb.functions.invoke('close-proxy',{
           body:{action:'log_custom_activity',lead_id:evt.closeLeadId,custom_activity_type_id:customTypeId}
@@ -733,16 +733,16 @@ async function logDraftAndOpenClose(evtId){
         if(data?.success)evt.closeActivity.closeActivityId=data.activity_id;
         if(error||data?.error)console.warn('Close custom activity error:',data?.error||error);
       }catch(e){console.warn('Close custom activity failed:',e);}
-    }
-
-    // Also log the note if there is one (for all call types)
-    if(draftNote){
-      try{
-        const {data,error}=await _sb.functions.invoke('close-proxy',{
-          body:{action:'log_activity',lead_id:evt.closeLeadId,note:draftNote}
-        });
-        if(error||data?.error)console.warn('Close note error:',data?.error||error);
-      }catch(e){console.warn('Close note failed:',e);}
+    } else {
+      // Fallback: log as note for call types without custom activity
+      if(draftNote){
+        try{
+          const {data,error}=await _sb.functions.invoke('close-proxy',{
+            body:{action:'log_activity',lead_id:evt.closeLeadId,note:draftNote}
+          });
+          if(error||data?.error)console.warn('Close note error:',data?.error||error);
+        }catch(e){console.warn('Close note failed:',e);}
+      }
     }
 
     // Open Close contact record
