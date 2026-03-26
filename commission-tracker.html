@@ -369,9 +369,9 @@ const TURBO_THRESHOLD=100000;const TURBO_RATE=0.14;
 const YEARS=[2026,2027,2028,2029,2030];
 const TYPES=['','CLOSED SET (SDR)','NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2','SPLIT PAY 2/2','UPSELL','RECURRING PAYMENT','RENEWAL','REFUND'];
 const PROGS=['','11,098','14,982','26,635'];
-const CMS=['','3.00%','10.00%','14.00%'];
+const CMS=['','3.00%','4.00%','10.00%','14.00%'];
 const TRMS=['','4 Month','6 Month','12 Month','Custom (Needs Approval)'];
-const EXCL_NEW_CASH=new Set(['REFUND','SPLIT PAY 2/2','RECURRING PAYMENT']);
+const EXCL_NEW_CASH=new Set(['REFUND','SPLIT PAY 2/2','RECURRING PAYMENT','RENEWAL']);
 const TURBO_AUTO_TYPES=new Set(['NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2']);
 const MO_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MO_KEYS=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
@@ -384,10 +384,8 @@ function genTD(yr){
   for(let m=0;m<12;m++){
     const ld=lastDay(yr,m);const mn=MO_NAMES[m];const mk=MO_KEYS[m];const px=TID_PFX[m];
     const febEnd=m===1?ld:15;
-    // First half
     tabs.push({id:px+'1',l:'1-15 '+mn.slice(0,3),p:mn+' '+yr,
       s:mn+' 15, '+yr,d:mn+' 22, '+yr,ms:m,d1:1,d2:15,mo:mk,yr:yr});
-    // Second half
     tabs.push({id:px+'2',l:'16-'+ld+' '+mn.slice(0,3),p:mn+' '+yr,
       s:mn+' '+ld+', '+yr,d:(m<11?MO_NAMES[m+1]+' 8, '+yr:'January 8, '+(yr+1)),
       ms:m,d1:16,d2:ld,mo:mk,yr:yr});
@@ -395,30 +393,18 @@ function genTD(yr){
   return tabs;
 }
 
-// All tabs across all years
 let ALL_TD={};
 YEARS.forEach(y=>{ALL_TD[y]=genTD(y);});
 
-let AY=2026; // active year
-let AT='j1'; // active tab
-let S={}; // S[year][tabId]={rows,rn,dr}
-let turboActivated={}; // turboActivated[year_month]=true
-let _uid=Date.now();
-let _prev={s1:0,s4:0,f0:0};
-let _skipCalc=false;
+let AY=2026;let AT='j1';let S={};let turboActivated={};
+let _uid=Date.now();let _prev={s1:0,s4:0,f0:0};let _skipCalc=false;
 
 function nid(){return 'r'+(++_uid);}
 function br(){return{id:nid(),tp:'',dl:'',dt:'',pg:'',ca:'',cm:'',tm:'',nt:'',src:'',auto:false,paid:false};}
 function TD(){return ALL_TD[AY];}
 function TS(){return S[AY];}
 
-// ─── YEAR SWITCHING ───
-function switchYear(yr){
-  AY=yr;AT=TD()[0].id;
-  ensureYear(yr);
-  document.getElementById('yrSel').value=yr;
-  rTabs();rAll();
-}
+function switchYear(yr){AY=yr;AT=TD()[0].id;ensureYear(yr);document.getElementById('yrSel').value=yr;rTabs();rAll();}
 
 function ensureYear(yr){
   if(!S[yr]){S[yr]={};ALL_TD[yr].forEach(t=>{S[yr][t.id]={rows:[],rn:'',dr:''};});}
@@ -429,7 +415,6 @@ function ensureYear(yr){
   });
 }
 
-// ─── DATE <-> TAB (CROSS-YEAR) ───
 function dateToTabGlobal(ds){
   if(!ds)return null;
   const p=ds.split('-');const y=+p[0],m=+p[1]-1,d=+p[2];
@@ -444,7 +429,6 @@ function getMonthTabs(){const mo=TD().find(t=>t.id===AT)?.mo;return TD().filter(
 function getCurrentMo(){return TD().find(t=>t.id===AT)?.mo;}
 function turboKey(){return AY+'_'+getCurrentMo();}
 
-// ─── STATE ACCESS HELPERS ───
 function getTabData(yr,tid){ensureYear(yr);return S[yr][tid];}
 
 // ─── LINKED ENTRIES (CROSS-YEAR) ───
@@ -463,7 +447,7 @@ function genLinked(row,tabId){
     const fd=addDays(row.dt,30),loc=dateToTabGlobal(fd);
     if(loc){
       ensureYear(loc.yr);
-      S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'SPLIT PAY 2/2',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:'10.00%',tm:row.tm,nt:'Auto \u2014 Split 2/2 from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
+      S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'SPLIT PAY 2/2',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:'Auto \u2014 Split 2/2 from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
     }
   } else if(row.tp==='NEW SALE (MONTHLY)'){
     const mo=termMo(row.tm);if(mo<2)return;
@@ -471,7 +455,7 @@ function genLinked(row,tabId){
       const fd=addDays(row.dt,30*i),loc=dateToTabGlobal(fd);
       if(loc){
         ensureYear(loc.yr);
-        S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'RECURRING PAYMENT',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:'10.00%',tm:row.tm,nt:'Auto \u2014 Recurring '+(i+1)+'/'+mo+' from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
+        S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'RECURRING PAYMENT',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:'Auto \u2014 Recurring '+(i+1)+'/'+mo+' from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
       }
     }
   }
@@ -538,7 +522,7 @@ const _sb = window.supabase.createClient(
 );
 let _currentUser = null;
 let _isAdmin = false;
-let _viewingUserId = null; // null = own tracker, set = viewing someone else
+let _viewingUserId = null;
 let _viewingUserEmail = null;
 
 // ─── AUTH ───
@@ -623,14 +607,11 @@ async function checkAdmin(){
 async function enterApp(){
   await checkAdmin();
   document.getElementById('login-screen').style.display = 'none';
-
   if(_isAdmin){
-    // Show admin dashboard
     document.getElementById('adminEmail').textContent = _currentUser.email;
     document.getElementById('admin-screen').style.display = 'block';
     await loadAdminDashboard();
   } else {
-    // Regular rep — straight to their tracker
     document.getElementById('userEmail').textContent = _currentUser.email;
     _viewingUserId = null;
     await loadFromSupabase(_currentUser.id);
@@ -641,31 +622,23 @@ async function enterApp(){
 
 async function doLogout(){
   await _sb.auth.signOut();
-  _currentUser = null;
-  _isAdmin = false;
-  _viewingUserId = null;
+  _currentUser = null;_isAdmin = false;_viewingUserId = null;
   window.location.href = 'index.html';
   document.getElementById('loginMsg').style.display = 'none';
 }
 
 // ─── ADMIN DASHBOARD ───
 async function loadAdminDashboard(){
-  // Fetch all profiles
   const { data: profiles } = await _sb.from('profiles').select('id, email, is_admin, created_at').order('created_at', { ascending: true });
   if(!profiles) return;
-
-  // Fetch all commission data for summaries
   const { data: allComm } = await _sb.from('commission_data').select('user_id, state, updated_at');
-
   const commMap = {};
   (allComm||[]).forEach(c => { commMap[c.user_id] = c; });
-
   const admins = profiles.filter(p => p.is_admin).length;
   const reps = profiles.length - admins;
   document.getElementById('adStatUsers').textContent = profiles.length;
   document.getElementById('adStatAdmins').textContent = admins;
   document.getElementById('adStatReps').textContent = reps;
-
   const list = document.getElementById('adminUserList');
   list.innerHTML = '';
   profiles.forEach(p => {
@@ -674,7 +647,6 @@ async function loadAdminDashboard(){
     const hasData = comm && comm.state && Object.keys(comm.state).length > 0;
     const updated = comm?.updated_at ? new Date(comm.updated_at).toLocaleDateString() : 'Never';
     const isMe = p.id === _currentUser.id;
-
     const div = document.createElement('div');
     div.className = 'admin-user';
     div.innerHTML =
@@ -695,47 +667,29 @@ async function loadAdminDashboard(){
 }
 
 async function toggleAdmin(btn){
-  const uid = btn.dataset.uid;
-  const wasAdmin = btn.dataset.admin === '1';
-  const newVal = !wasAdmin;
-  btn.textContent = 'Saving...';
-  btn.disabled = true;
+  const uid = btn.dataset.uid;const wasAdmin = btn.dataset.admin === '1';const newVal = !wasAdmin;
+  btn.textContent = 'Saving...';btn.disabled = true;
   await _sb.from('profiles').update({ is_admin: newVal }).eq('id', uid);
   await loadAdminDashboard();
 }
 
 async function viewUserTracker(userId, email){
-  _viewingUserId = userId;
-  _viewingUserEmail = email;
+  _viewingUserId = userId;_viewingUserEmail = email;
   const isOwn = userId === _currentUser.id;
-
-  S = {};
-  turboActivated = {};
+  S = {};turboActivated = {};
   await loadFromSupabase(userId);
-
   document.getElementById('admin-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = email;
   document.getElementById('btnDashboard').style.display = 'inline-block';
-
-  // Show viewing banner if not own tracker
   const banner = document.getElementById('viewingBanner');
-  if(!isOwn){
-    document.getElementById('viewingName').textContent = email;
-    banner.classList.add('show');
-  } else {
-    banner.classList.remove('show');
-  }
-
+  if(!isOwn){document.getElementById('viewingName').textContent = email;banner.classList.add('show');}
+  else{banner.classList.remove('show');}
   init();
 }
 
 function backToAdmin(){
-  // Reset and go back to admin dashboard
-  S = {};
-  turboActivated = {};
-  _viewingUserId = null;
-  _viewingUserEmail = null;
+  S = {};turboActivated = {};_viewingUserId = null;_viewingUserEmail = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('viewingBanner').classList.remove('show');
   document.getElementById('admin-screen').style.display = 'block';
@@ -745,47 +699,33 @@ function backToAdmin(){
 // ─── PERSISTENCE (Supabase) ───
 async function loadFromSupabase(userId){
   try {
-    const { data, error } = await _sb
-      .from('commission_data')
-      .select('state, turbo')
-      .eq('user_id', userId)
-      .single();
-    if(data){
-      S = data.state || {};
-      turboActivated = data.turbo || {};
-    }
+    const { data, error } = await _sb.from('commission_data').select('state, turbo').eq('user_id', userId).single();
+    if(data){S = data.state || {};turboActivated = data.turbo || {};}
   } catch(e){ console.warn('Load error:', e); }
 }
 
 let _saveTimer;
 async function saveToSupabase(){
   if(!_currentUser) return;
-  // Only save if viewing own tracker
   const saveId = _viewingUserId || _currentUser.id;
-  if(saveId !== _currentUser.id) return; // read-only for other users
+  if(saveId !== _currentUser.id) return;
   try {
-    await _sb
-      .from('commission_data')
-      .upsert({
-        user_id: _currentUser.id,
-        state: S,
-        turbo: turboActivated,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
+    await _sb.from('commission_data').upsert({
+      user_id: _currentUser.id, state: S, turbo: turboActivated, updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
   } catch(e){ console.warn('Save error:', e); }
 }
 
-function ld(){} // no-op, loaded async before init
+function ld(){}
 function sv(){ clearTimeout(_saveTimer); _saveTimer = setTimeout(saveToSupabase, 1200); }
 function svTurbo(){ sv(); }
-function ldTurbo(){} // no-op, loaded async before init
+function ldTurbo(){}
 
 // ─── INIT ───
 function init(){
   ld();ldTurbo();
-  AY=2026;AT='j1'; // reset view state
+  AY=2026;AT='j1';
   YEARS.forEach(y=>ensureYear(y));
-  // Year dropdown (clear first to prevent duplicates on re-init)
   const sel=document.getElementById('yrSel');
   sel.innerHTML='';
   YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
@@ -824,17 +764,17 @@ function rTable(){
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');const isRef=r.tp==='REFUND';
     const ca=pm(r.ca),co=pp(r.cm),comm=isRef?-(ca*co):(ca*co);
-    const isAuto=r.auto,lk=isAuto?' locked':'';
+    const isAuto=r.auto,lk='';
     let cls='fi';if(isAuto)cls+=' auto-row';if(r.paid)cls+=' confirmed-row';
     tr.className=cls;
     const isTT=TURBO_AUTO_TYPES.has(r.tp);
     const commIsTurbo=turbo&&isTT&&co>=TURBO_RATE;
     tr.innerHTML='<td class="rn">'+(i+1)+(isAuto?'<span class="auto-badge">auto</span>':'')+'</td>'+
       '<td>'+mSel('tp',i,TYPES,r.tp,isAuto)+'</td>'+
-      '<td><input type="text" class="ci nm'+lk+'" placeholder="Dealer name..." value="'+esc(r.dl)+'" data-r="'+i+'" data-f="dl" oninput="upd(this)"'+(isAuto?' readonly':'')+'></td>'+
-      '<td><input type="date" class="ci'+lk+'" value="'+(r.dt||'')+'" data-r="'+i+'" data-f="dt" onchange="upd(this)"'+(isAuto?' readonly':'')+'></td>'+
+      '<td><input type="text" class="ci nm'+lk+'" placeholder="Dealer name..." value="'+esc(r.dl)+'" data-r="'+i+'" data-f="dl" oninput="upd(this)"></td>'+
+      '<td><input type="date" class="ci'+lk+'" value="'+(r.dt||'')+'" data-r="'+i+'" data-f="dt" onchange="upd(this)"></td>'+
       '<td>'+mSel('pg',i,PROGS,r.pg,isAuto)+'</td>'+
-      '<td><input type="text" class="ci mo'+lk+'" placeholder="$0.00" value="'+esc(r.ca)+'" data-r="'+i+'" data-f="ca" oninput="upd(this)" onblur="fmtM(this)"'+(isAuto?' readonly':'')+'></td>'+
+      '<td><input type="text" class="ci mo'+lk+'" placeholder="$0.00" value="'+esc(r.ca)+'" data-r="'+i+'" data-f="ca" oninput="upd(this)" onblur="fmtM(this)"></td>'+
       '<td>'+mSel('cm',i,CMS,r.cm,isAuto,commIsTurbo)+'</td>'+
       '<td>'+mSel('tm',i,TRMS,r.tm,isAuto)+'</td>'+
       '<td><input type="text" class="ci cm mo'+(isRef?' neg':'')+(commIsTurbo?' turbo':'')+'" readonly value="'+(Math.abs(comm)>0?cur(comm):'')+'"></td>'+
@@ -848,8 +788,8 @@ function rTable(){
 }
 
 function mSel(f,ri,opts,cur,locked,turboHl){
-  const dis=locked?' disabled':'';const tcls=turboHl?' turbo-cm':'';
-  let h='<select class="ci'+tcls+(locked?' locked':'')+'" data-r="'+ri+'" data-f="'+f+'"'+dis+' onchange="upd(this)">';
+  const tcls=turboHl?' turbo-cm':'';
+  let h='<select class="ci'+tcls+'" data-r="'+ri+'" data-f="'+f+'" onchange="upd(this)">';
   opts.forEach(o=>{h+='<option value="'+esc(o)+'"'+(o===cur?' selected':'')+'>'+(o===''?'\u2014':o)+'</option>';});
   return h+'</select>';
 }
@@ -924,8 +864,6 @@ function pm(s){if(!s)return 0;return parseFloat(String(s).replace(/[^0-9.\-]/g,'
 function pp(s){if(!s)return 0;const n=parseFloat(String(s).replace(/[^0-9.\-]/g,''));if(String(s).includes('%'))return n/100;return n>1?n/100:n||0;}
 function cur(n){const a=Math.abs(n);const f='$'+a.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');return n<0?'-'+f:f;}
 function esc(s){if(!s)return '';const d=document.createElement('div');d.textContent=s;return d.innerHTML.replace(/"/g,'&quot;');}
-
-// init() is called by enterApp() after authentication
 
 </script>
 </body>
