@@ -109,10 +109,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .time-grid{display:grid;position:relative;}
 .time-label{padding:0 8px;display:flex;align-items:flex-start;justify-content:flex-end;height:100px;border-bottom:1px solid var(--brd);}
 .time-label span{font-size:10px;color:var(--t5);font-family:var(--fm);margin-top:-6px;}
-.time-slot{height:100px;border-left:2px solid var(--brd);border-bottom:1px solid var(--brd);cursor:pointer;padding:2px 3px;transition:background .1s;overflow-y:auto;}
+.time-slot{height:100px;border-left:2px solid var(--brd);border-bottom:1px solid var(--brd);cursor:pointer;padding:0;transition:background .1s;position:relative;overflow:visible;}
 .time-slot:hover{background:rgba(211,251,64,.03);}
-.slot-ev{font-size:12px;padding:4px 6px;border-left:3px solid;color:#ddd;border-radius:2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.4;}
-.slot-ev:hover{filter:brightness(1.3);}
+.slot-ev{font-size:12px;padding:4px 6px;border-left:3px solid;color:#ddd;border-radius:2px;cursor:pointer;line-height:1.4;position:absolute;left:2px;right:2px;z-index:2;overflow:hidden;box-sizing:border-box;}
+.slot-ev:hover{filter:brightness(1.3);z-index:3;}
 .slot-ev-time{font-family:var(--fm);font-size:10px;color:var(--t3);}
 
 /* Day View */
@@ -568,6 +568,21 @@ function getDefaultTitle(typeId){
 function getDuration(typeId){
   const t=EVENT_TYPES.find(x=>x.id===typeId);
   return t?t.dur:45;
+}
+
+// Get actual duration in minutes from start/end time, fallback to type duration
+function getEvtDurMins(evt){
+  if(evt.startTime&&evt.endTime){
+    const[sh,sm]=evt.startTime.split(":").map(Number);
+    const[eh,em]=evt.endTime.split(":").map(Number);
+    const diff=(eh*60+em)-(sh*60+sm);
+    if(diff>0)return diff;
+  }
+  return getDuration(evt.type);
+}
+function getEvtStartMin(evt){
+  if(!evt.startTime)return 0;
+  return parseInt(evt.startTime.split(":")[1])||0;
 }
 
 // ─── OUTCOME HELPERS ───
@@ -1136,7 +1151,11 @@ function renderWeek(){
       html+=`<div class="time-slot" style="grid-column:${di+2};grid-row:${h+1}" onclick="openNewEvent('${dateStr}',${h})">`;
       slotEvts.forEach(evt=>{
         const t=EVENT_TYPES.find(x=>x.id===evt.type);
-        html+=`<div class="slot-ev" style="background:${t?t.color:"#555"}22;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">
+        const durMins=getEvtDurMins(evt);
+        const startMin=getEvtStartMin(evt);
+        const topPx=Math.round((startMin/60)*100);
+        const hPx=Math.round((durMins/60)*100);
+        html+=`<div class="slot-ev" style="background:${t?t.color:"#555"}22;border-color:${t?t.color:"#555"};top:${topPx}px;height:${hPx}px" onclick="event.stopPropagation();showDetail('${evt.id}')">
           <span class="slot-ev-time">${fmtTimeDisplay(evt.startTime)} </span>${evt.gcalImported?'📅 ':''}${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
         html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
         html+=`</div>`;
@@ -1177,8 +1196,9 @@ function renderDay(){
       const closer=state.users.find(x=>x.id===evt.closerId);
       const sdr=state.users.find(x=>x.id===evt.sdrId);
       const legacyUser=!closer&&!sdr?state.users.find(x=>x.id===evt.userId):null;
-      const dur=getDuration(evt.type);
-      html+=`<div class="day-ev" style="background:${t?t.color:"#555"}15;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
+      const dur=getEvtDurMins(evt);
+      const hPx=Math.round((dur/60)*100);
+      html+=`<div class="day-ev" style="background:${t?t.color:"#555"}15;border-color:${t?t.color:"#555"};min-height:${hPx}px" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
       html+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
       html+=`<span class="day-ev-title">${evt.gcalImported?'<span style="opacity:.6;font-size:11px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}</span>`;
       html+=`<span class="day-ev-time">${fmtTimeDisplay(evt.startTime)}${evt.endTime?" - "+fmtTimeDisplay(evt.endTime):""} <span style="color:var(--t5)">${dur}m</span></span>`;
