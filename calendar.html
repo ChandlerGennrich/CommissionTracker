@@ -730,8 +730,10 @@ async function logDraftAndOpenClose(evtId){
         const {data,error}=await _sb.functions.invoke('close-proxy',{
           body:{action:'log_custom_activity',lead_id:evt.closeLeadId,custom_activity_type_id:customTypeId}
         });
+        console.log('Close custom activity response:',JSON.stringify(data));
         if(data?.success)evt.closeActivity.closeActivityId=data.activity_id;
-        if(error||data?.error)console.warn('Close custom activity error:',data?.error||error);
+        if(data?.close_detail)console.warn('Close rejection detail:',data.close_detail);
+        if(error)console.warn('Close custom activity error:',error);
       }catch(e){console.warn('Close custom activity failed:',e);}
     } else {
       // Fallback: log as note for call types without custom activity
