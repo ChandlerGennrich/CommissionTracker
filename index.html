@@ -59,7 +59,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hub-email{font-family:var(--fm);font-size:11px;color:var(--t5);margin-top:6px;}
 .hub-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t6);margin-top:24px;}
 
-.hub-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:640px;width:100%;}
+.hub-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-width:900px;width:100%;}
 .hub-card{background:var(--bg1);border:1px solid var(--brd);padding:32px 28px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;text-decoration:none;display:block;}
 .hub-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;transition:opacity .2s;}
 .hub-card:hover{border-color:var(--acc);background:var(--bgH);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3);}
@@ -78,6 +78,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .card-tracker .hub-card-tag{color:var(--green);border:1px solid rgba(34,197,94,.2);background:rgba(34,197,94,.06);}
 .card-tracker:hover .hub-card-icon{animation:pulse .6s ease;}
 
+.card-insights::before{background:var(--cyan);opacity:.5;}
+.card-insights .hub-card-tag{color:var(--cyan);border:1px solid rgba(6,182,212,.2);background:rgba(6,182,212,.06);}
+.card-insights:hover .hub-card-icon{animation:pulse .6s ease;}
+
 @keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
 
 .hub-footer{margin-top:32px;display:flex;align-items:center;gap:12px;}
@@ -85,8 +89,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hub-logout:hover{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.06);}
 .hub-role{font-family:var(--fm);font-size:10px;color:var(--t6);padding:4px 8px;border:1px solid var(--brd2);background:var(--bg2);}
 
-@media(max-width:520px){
+@media(max-width:768px){
   .hub-cards{grid-template-columns:1fr;max-width:340px;}
+}
+@media(max-width:520px){
   .login-body{padding:20px 20px;}
   .login-hdr{padding:24px 20px 16px;}
 }
@@ -143,6 +149,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
       <div class="hub-card-title">Commission Tracker</div>
       <div class="hub-card-desc">Track commissions, turbo bonuses, and payouts across all pay periods.</div>
       <span class="hub-card-tag">Commissions</span>
+    </a>
+    <a class="hub-card card-insights" href="insights.html">
+      <div class="hub-card-icon">📊</div>
+      <div class="hub-card-title">DA Insights</div>
+      <div class="hub-card-desc">EOD reports, show rates, sales metrics, and team performance at a glance.</div>
+      <span class="hub-card-tag">Reports + Analytics</span>
     </a>
   </div>
 
@@ -231,7 +243,6 @@ async function checkSession(){
 }
 
 async function showHub(){
-  // Fetch profile for display name and role
   const capName = s => s ? s.replace(/\b\w/g, c => c.toUpperCase()) : '';
   let displayName = capName(_currentUser.email.split('@')[0]);
   let role = 'Rep';
