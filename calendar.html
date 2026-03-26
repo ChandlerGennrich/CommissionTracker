@@ -341,6 +341,7 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
   </div>
   <div class="nav-title" id="navTitle"></div>
   <div class="nav-r">
+    <span class="ev-count" id="syncStatus" style="cursor:pointer" onclick="manualSync()" title="Click to sync from Google Calendar">📅 Sync</span>
     <span class="ev-count" id="evCount"></span>
     <button class="btn btn-acc" onclick="openNewEvent()">+ New Event</button>
   </div>
@@ -472,6 +473,9 @@ async function enterApp(){
 
   await loadState();
   await checkGcalConnection();
+
+  // Start GCal import sync (pulls events from all connected team members' calendars)
+  startGcalSync();
 
   // Default: filter to only show your own events
   state.filterUsers = [_currentUser.id];
@@ -853,7 +857,8 @@ function evtToRow(e){
     attendees:e.attendees||[], rescheduled_from:e.rescheduledFrom||null,
     rescheduled_to:e.rescheduledTo||null, gcal_synced:e.gcalSynced||false,
     invites_sent:e.invitesSent||false, close_activity:e.closeActivity||null,
-    created_by:_currentUser?.id||null
+    gcal_imported:e.gcalImported||false,
+    created_by:e.createdBy||_currentUser?.id||null
   };
 }
 function rowToEvt(r){
@@ -870,7 +875,7 @@ function rowToEvt(r){
     attendees:r.attendees||[], rescheduledFrom:r.rescheduled_from,
     rescheduledTo:r.rescheduled_to, gcalSynced:r.gcal_synced,
     invitesSent:r.invites_sent, closeActivity:r.close_activity,
-    createdBy:r.created_by
+    gcalImported:r.gcal_imported||false, createdBy:r.created_by
   };
 }
 
@@ -1080,7 +1085,7 @@ function renderMonth(){
       const t=EVENT_TYPES.find(x=>x.id===evt.type);
       html+=`<div class="month-ev" style="background:${t?t.color:"#555"}18;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
       if(evt.startTime)html+=`<span class="month-ev-time">${fmtTimeDisplay(evt.startTime)}</span>`;
-      html+=`${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
+      html+=`${evt.gcalImported?'<span style="opacity:.5;font-size:8px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
       html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
       html+=`</div>`;
     });
@@ -1115,7 +1120,7 @@ function renderWeek(){
       slotEvts.forEach(evt=>{
         const t=EVENT_TYPES.find(x=>x.id===evt.type);
         html+=`<div class="slot-ev" style="background:${t?t.color:"#555"}22;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">
-          <span class="slot-ev-time">${fmtTimeDisplay(evt.startTime)} </span>${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
+          <span class="slot-ev-time">${fmtTimeDisplay(evt.startTime)} </span>${evt.gcalImported?'📅 ':''}${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
         html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
         html+=`</div>`;
       });
@@ -1158,7 +1163,7 @@ function renderDay(){
       const dur=getDuration(evt.type);
       html+=`<div class="day-ev" style="background:${t?t.color:"#555"}15;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
       html+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
-      html+=`<span class="day-ev-title">${esc(evt.title)}</span>`;
+      html+=`<span class="day-ev-title">${evt.gcalImported?'<span style="opacity:.6;font-size:11px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}</span>`;
       html+=`<span class="day-ev-time">${fmtTimeDisplay(evt.startTime)}${evt.endTime?" - "+fmtTimeDisplay(evt.endTime):""} <span style="color:var(--t5)">${dur}m</span></span>`;
       html+=`</div>`;
       const metaParts=[];
@@ -1470,6 +1475,7 @@ function showDetail(id){
           <div style="display:flex;align-items:center;gap:6px">
             <span class="type-badge" style="background:${t?t.color:"#555"}22;color:${t?t.color:"#888"}">${t?t.icon:""} ${t?t.label:"Unknown"}</span>
             <span style="font-family:var(--fm);font-size:10px;color:var(--t5)">${dur} min</span>
+            ${evt.gcalImported?'<span class="integ-badge live" style="font-size:8px">📅 Imported</span>':''}
             ${outcomeHtml}
           </div>
         </div>
@@ -1870,6 +1876,142 @@ function copyToClipboard(text){
   navigator.clipboard.writeText(text).then(()=>{
     // Brief visual flash could be added
   }).catch(()=>{});
+}
+
+// ─── GOOGLE CALENDAR SYNC — Pull Events IN ───
+let _gcalSyncTimer=null;
+let _lastSyncTime=null;
+let _isSyncing=false;
+const GCAL_SYNC_INTERVAL=3*60*1000; // 3 minutes
+
+function startGcalSync(){
+  setTimeout(syncFromGcal,2000); // Initial sync after 2s
+  _gcalSyncTimer=setInterval(syncFromGcal,GCAL_SYNC_INTERVAL);
+}
+
+async function syncFromGcal(){
+  if(!_currentUser||_isSyncing)return;
+  _isSyncing=true;
+  updateSyncStatus('syncing');
+
+  const now=new Date();
+  const timeMin=new Date(now);timeMin.setDate(timeMin.getDate()-7);
+  const timeMax=new Date(now);timeMax.setDate(timeMax.getDate()+60);
+  const tMin=timeMin.toISOString();
+  const tMax=timeMax.toISOString();
+
+  let totalImported=0;
+
+  for(const user of state.users){
+    try{
+      const {data,error}=await _sb.functions.invoke('gcal-proxy',{
+        body:{action:'list_events',user_id:user.id,time_min:tMin,time_max:tMax}
+      });
+      if(error||data?.error||!data?.events)continue;
+
+      for(const gcalEvt of data.events){
+        if(state.events.some(e=>e.gcalEventId===gcalEvt.id))continue;
+        if(gcalEvt.status==='cancelled')continue;
+
+        const daEvt=mapGcalToDaEvent(gcalEvt,user.id);
+        state.events.push(daEvt);
+        saveState(daEvt.id);
+        totalImported++;
+      }
+    }catch(e){/* user not connected — skip */}
+  }
+
+  _lastSyncTime=new Date();
+  _isSyncing=false;
+  updateSyncStatus('done',totalImported);
+  if(totalImported>0)render();
+}
+
+function manualSync(){syncFromGcal();}
+
+function mapGcalToDaEvent(gcalEvt,userId){
+  let date='',startTime='',endTime='';
+
+  if(gcalEvt.start?.dateTime){
+    const d=new Date(gcalEvt.start.dateTime);
+    date=fmtDate(d);
+    startTime=fmtTime(d.getHours(),d.getMinutes());
+  }else if(gcalEvt.start?.date){
+    date=gcalEvt.start.date;
+  }
+  if(gcalEvt.end?.dateTime){
+    const d=new Date(gcalEvt.end.dateTime);
+    endTime=fmtTime(d.getHours(),d.getMinutes());
+  }
+
+  const title=gcalEvt.summary||'Imported Event';
+  const type=detectEventType(title);
+
+  // Extract Zoom link from description or conference data
+  let zoomLink='';
+  const desc=gcalEvt.description||'';
+  const zoomMatch=desc.match(/https:\/\/[^\s<"]*zoom\.us\/[^\s<"]*/i);
+  if(zoomMatch)zoomLink=zoomMatch[0];
+  if(!zoomLink&&gcalEvt.conferenceData?.entryPoints){
+    const ve=gcalEvt.conferenceData.entryPoints.find(ep=>ep.entryPointType==='video');
+    if(ve)zoomLink=ve.uri;
+  }
+
+  // Attendees (skip calendar resource emails)
+  const attendees=(gcalEvt.attendees||[])
+    .map(a=>a.email)
+    .filter(e=>e&&!e.endsWith('@calendar.google.com')&&!e.endsWith('@resource.calendar.google.com'));
+
+  return {
+    id:uid(),title:title,type:type,date:date,
+    startTime:startTime,endTime:endTime,
+    closerId:userId,sdrId:'',
+    dealership:'',contact:'',closeLeadId:'',
+    notes:desc.replace(/<[^>]*>/g,'').substring(0,2000),
+    outcome:'',zoomLink:zoomLink,zoomMeetingId:'',
+    attendees:attendees,
+    gcalEventId:gcalEvt.id,gcalSynced:true,gcalImported:true,
+    gcalLink:gcalEvt.htmlLink||'',
+    invitesSent:false,closeActivity:null,
+    rescheduledFrom:'',rescheduledTo:'',
+    createdBy:_currentUser.id
+  };
+}
+
+function detectEventType(title){
+  const l=title.toLowerCase();
+  if(l.includes('demo'))return'demo';
+  if(l.includes('led review')||l.includes('led call'))return'led';
+  if(l.includes('sync call')||l.includes('sync '))return'sync';
+  if(l.includes('setup'))return'setup';
+  if(l.includes('manager training'))return'mgr-training';
+  if(l.includes('sales team training')||l.includes('team training'))return'team-training';
+  if(l.includes('launch'))return'launch';
+  if(l.includes('one week')||l.includes('1 week')||l.includes('1wk'))return'1wk-checkin';
+  if(l.includes('three week')||l.includes('3 week')||l.includes('3wk'))return'3wk-checkin';
+  if(l.includes('1 on 1')||l.includes('one on one')||l.includes('1:1'))return'1on1';
+  return'demo';
+}
+
+function updateSyncStatus(status,count){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
+  if(status==='syncing'){
+    el.textContent='⟳ Syncing...';
+    el.style.color='var(--cyan)';
+  }else{
+    const ago=_lastSyncTime?formatTimeAgo(_lastSyncTime):'';
+    el.textContent=count>0?`📅 +${count} imported`:`📅 ${ago}`;
+    el.style.color='';
+    if(count>0)setTimeout(()=>{if(el)el.textContent=`📅 ${formatTimeAgo(_lastSyncTime)}`;},5000);
+  }
+}
+
+function formatTimeAgo(date){
+  const diff=Math.floor((Date.now()-date.getTime())/1000);
+  if(diff<60)return'just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  return Math.floor(diff/3600)+'h ago';
 }
 
 // ─── CLOSE MODAL ───
