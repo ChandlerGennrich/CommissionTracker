@@ -192,6 +192,8 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
 .oq-btn[data-oc="rescheduled"].active,.oq-btn[data-oc="rescheduled"]:hover{background:rgba(249,115,22,.15);border-color:#f97316;color:#f97316;}
 .oq-btn[data-oc="sale"]{border-color:rgba(34,197,94,.25);color:#4ade80;}
 .oq-btn[data-oc="sale"].active,.oq-btn[data-oc="sale"]:hover{background:rgba(34,197,94,.15);border-color:#22c55e;color:#22c55e;}
+.oq-btn[data-oc="cancelled"]{border-color:rgba(100,116,139,.25);color:#94a3b8;}
+.oq-btn[data-oc="cancelled"].active,.oq-btn[data-oc="cancelled"]:hover{background:rgba(100,116,139,.15);border-color:#64748b;color:#64748b;}
 .outcome-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:4px;flex-shrink:0;}
 .month-ev .outcome-row{display:none;}
 .month-ev:hover .outcome-row{display:flex;}
@@ -332,6 +334,7 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
     <div class="hdr-div"></div>
     <button class="btn btn-filter on" id="filterToggle" onclick="toggleSidebar()">☰ Filters</button>
     <button class="btn" id="btnTeam" onclick="openTeamModal()" style="display:none">👥 Team</button>
+    <button class="btn" onclick="openEodModal()" style="background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3);color:var(--orange)">📋 EOD Report</button>
     <div class="hdr-div"></div>
     <span style="font-size:10px;color:var(--t5);font-family:var(--fm)" id="userEmail"></span>
     <button class="btn" onclick="doLogout()">Logout</button>
@@ -590,6 +593,7 @@ const OUTCOMES=[
   {id:"showed",label:"S",full:"Showed",color:"#3b82f6"},
   {id:"no-show",label:"NS",full:"No Show",color:"#ef4444"},
   {id:"rescheduled",label:"R",full:"Resched",color:"#f97316"},
+  {id:"cancelled",label:"C",full:"Cancel",color:"#64748b"},
   {id:"sale",label:"$",full:"Sale",color:"#22c55e"}
 ];
 
@@ -626,10 +630,56 @@ function setQuickOutcome(evtId,outcome){
   if(evt.outcome===outcome){evt.outcome="";evt.closeActivity=null;saveState();render();return;}
   // Reschedule triggers the reschedule flow
   if(outcome==="rescheduled"){showRescheduleModal(evtId);return;}
+  // Sale triggers sale details modal first
+  if(outcome==="sale"){showSaleDetailsModal(evtId);return;}
   evt.outcome=outcome;
   saveState();
-  // Show outcome confirmed modal with draft activity
+  // Show outcome confirmed modal with draft activity (skip for cancel — just mark it)
+  if(outcome==="cancelled"){render();return;}
   showOutcomeConfirmed(evtId,outcome);
+}
+
+// ─── SALE DETAILS MODAL ───
+function showSaleDetailsModal(evtId){
+  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
+  const mc=document.getElementById("modalContainer");
+  mc.innerHTML='<div class="overlay" onclick="closeModal()"><div class="modal" style="width:420px;max-width:95vw" onclick="event.stopPropagation()">'+
+    '<div class="modal-hdr"><span class="modal-title">Sale Details</span><button class="close-x" onclick="closeModal()">✕</button></div>'+
+    '<div style="padding:16px 18px;text-align:center;border-bottom:1px solid var(--brd2)">'+
+      '<div style="font-size:28px;margin-bottom:4px">💰</div>'+
+      '<div style="font-size:13px;font-weight:600;color:var(--t1)">'+esc(evt.title)+'</div>'+
+      '<div style="font-size:11px;color:var(--t3)">'+(evt.dealership?esc(evt.dealership):'')+'</div>'+
+    '</div>'+
+    '<div style="padding:16px 18px">'+
+      '<div class="field"><div class="field-label">Contract Value</div>'+
+        '<input class="fi mono" id="sdContractVal" placeholder="$0.00" value="'+esc(evt.contractValue||'')+'"></div>'+
+      '<div class="field"><div class="field-label">Cash Collected</div>'+
+        '<input class="fi mono" id="sdCashCollected" placeholder="$0.00" value="'+esc(evt.cashCollectedSale||'')+'"></div>'+
+      '<div class="field"><div class="field-label">Contract Length</div>'+
+        '<select class="fi" id="sdContractLen">'+
+          '<option value="">— Select —</option>'+
+          '<option value="4 Month"'+(evt.contractLength==='4 Month'?' selected':'')+'>4 Month</option>'+
+          '<option value="6 Month"'+(evt.contractLength==='6 Month'?' selected':'')+'>6 Month</option>'+
+          '<option value="12 Month"'+(evt.contractLength==='12 Month'?' selected':'')+'>12 Month</option>'+
+          '<option value="Custom"'+(evt.contractLength==='Custom'?' selected':'')+'>Custom</option>'+
+        '</select></div>'+
+    '</div>'+
+    '<div class="modal-foot">'+
+      '<button class="btn" onclick="closeModal()">Cancel</button>'+
+      '<button class="btn btn-acc" onclick="confirmSaleDetails(\''+evtId+'\')">Confirm Sale</button>'+
+    '</div>'+
+  '</div></div>';
+}
+
+function confirmSaleDetails(evtId){
+  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
+  evt.outcome='sale';
+  evt.contractValue=document.getElementById('sdContractVal')?.value||'';
+  evt.cashCollectedSale=document.getElementById('sdCashCollected')?.value||'';
+  evt.contractLength=document.getElementById('sdContractLen')?.value||'';
+  saveState(evtId);
+  closeModal();
+  showOutcomeConfirmed(evtId,'sale');
 }
 
 // ─── DRAFT ACTIVITY TEMPLATES ───
@@ -917,6 +967,10 @@ function evtToRow(e){
     rescheduled_to:e.rescheduledTo||null, gcal_synced:e.gcalSynced||false,
     invites_sent:e.invitesSent||false, close_activity:e.closeActivity||null,
     gcal_imported:e.gcalImported||false,
+    source:e.source||'inbound',
+    contract_value:e.contractValue||null,
+    cash_collected_sale:e.cashCollectedSale||null,
+    contract_length:e.contractLength||null,
     created_by:e.createdBy||_currentUser?.id||null
   };
 }
@@ -934,7 +988,12 @@ function rowToEvt(r){
     attendees:r.attendees||[], rescheduledFrom:r.rescheduled_from,
     rescheduledTo:r.rescheduled_to, gcalSynced:r.gcal_synced,
     invitesSent:r.invites_sent, closeActivity:r.close_activity,
-    gcalImported:r.gcal_imported||false, createdBy:r.created_by
+    gcalImported:r.gcal_imported||false,
+    source:r.source||'inbound',
+    contractValue:r.contract_value||'',
+    cashCollectedSale:r.cash_collected_sale||'',
+    contractLength:r.contract_length||'',
+    createdBy:r.created_by
   };
 }
 
@@ -1308,16 +1367,26 @@ function showEventModal(evt){
   const curType=evt.type||"demo";
   const curDur=getDuration(curType);
   const autoTitle=isEdit?evt.title:getDefaultTitle(curType);
+  const showSource=curType==='demo'||curType==='led';
+  const curSource=evt.source||'inbound';
   let outcomeOpts=`<option value="">— Not set —</option><option value="showed"${evt.outcome==="showed"?" selected":""}>Showed</option>
     <option value="no-show"${evt.outcome==="no-show"?" selected":""}>No Show</option>
     <option value="rescheduled"${evt.outcome==="rescheduled"?" selected":""}>Rescheduled</option>
+    <option value="cancelled"${evt.outcome==="cancelled"?" selected":""}>Cancelled</option>
     <option value="sale"${evt.outcome==="sale"?" selected":""}>Sale</option>`;
 
   mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="modal" style="width:520px;max-width:95vw" onclick="event.stopPropagation()">
     <div class="modal-hdr"><span class="modal-title">${isEdit?"Edit Event":"New Event"}</span><button class="close-x" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="field"><div class="field-label">Call Type</div>
-        <select class="fi" id="mType" onchange="onTypeChange()">${typeOpts}</select></div>
+      <div class="field field-row field-row-2">
+        <div><div class="field-label">Call Type</div>
+          <select class="fi" id="mType" onchange="onTypeChange()">${typeOpts}</select></div>
+        <div id="mSourceWrap" style="${showSource?'':'display:none'}"><div class="field-label">Source</div>
+          <select class="fi" id="mSource">
+            <option value="inbound"${curSource==='inbound'?' selected':''}>Inbound</option>
+            <option value="outbound"${curSource==='outbound'?' selected':''}>Outbound</option>
+          </select></div>
+      </div>
       <div class="field"><div class="field-label">Title</div>
         <input class="fi" id="mTitle" value="${esc(autoTitle)}" placeholder="Auto-populated from call type"></div>
       <div class="field field-row field-row-2">
@@ -1393,6 +1462,9 @@ function onTypeChange(){
     const isAutoTitle=!cur||EVENT_TYPES.some(t=>cur===t.label+" With Dealership Accelerator");
     if(isAutoTitle)titleEl.value=getDefaultTitle(typeId);
   }
+  // Show/hide source toggle for demos and LED reviews
+  const srcWrap=document.getElementById("mSourceWrap");
+  if(srcWrap)srcWrap.style.display=(typeId==='demo'||typeId==='led')?'':'none';
   updateDurationLabel();
   tryAutoPopulateNotes();
 }
@@ -1423,7 +1495,8 @@ function saveEvent(existingId){
     outcome:document.getElementById("mOutcome")?.value||"",
     zoomLink:document.getElementById("mZoomLink")?.value||"",
     zoomMeetingId:document.getElementById("mZoomMeetingId")?.value||"",
-    attendees:modalAttendees.slice()
+    attendees:modalAttendees.slice(),
+    source:document.getElementById("mSource")?.value||"inbound"
   };
   if(!data.title)return;
 
@@ -1940,6 +2013,210 @@ function copyToClipboard(text){
   navigator.clipboard.writeText(text).then(()=>{
     // Brief visual flash could be added
   }).catch(()=>{});
+}
+
+// ─── EOD REPORT ───
+function getEodAutoData(dateStr,userId){
+  const evts=state.events.filter(e=>e.date===dateStr&&(e.closerId===userId||e.sdrId===userId));
+  const demos=evts.filter(e=>e.type==='demo');
+  const leds=evts.filter(e=>e.type==='led');
+  const syncs=evts.filter(e=>e.type==='sync');
+  const inDemos=demos.filter(e=>e.source!=='outbound');
+  const outDemos=demos.filter(e=>e.source==='outbound');
+  const inLeds=leds.filter(e=>e.source!=='outbound');
+  const outLeds=leds.filter(e=>e.source==='outbound');
+
+  return {
+    // Closer fields
+    inboundDemosScheduled:inDemos.length,
+    demosShowed:demos.filter(e=>e.outcome==='showed').length,
+    demosRescheduled:demos.filter(e=>e.outcome==='rescheduled').length,
+    demosNoShow:demos.filter(e=>e.outcome==='no-show').length,
+    demosCancelled:demos.filter(e=>e.outcome==='cancelled').length,
+    demosPushedToCollab:demos.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,
+    inboundCollabsScheduled:inLeds.length,
+    collabsShowed:leds.filter(e=>e.outcome==='showed').length,
+    collabsRescheduled:leds.filter(e=>e.outcome==='rescheduled').length,
+    collabsNoShow:leds.filter(e=>e.outcome==='no-show').length,
+    collabsCancelled:leds.filter(e=>e.outcome==='cancelled').length,
+    syncsScheduled:syncs.length,
+    syncsShowed:syncs.filter(e=>e.outcome==='showed').length,
+    syncsNoShow:syncs.filter(e=>e.outcome==='no-show').length,
+    salesUnits:evts.filter(e=>e.outcome==='sale').length,
+    totalContractValue:evts.filter(e=>e.outcome==='sale').reduce((s,e)=>s+parseFloat(String(e.contractValue||'0').replace(/[^0-9.]/g,''))||0,0),
+    totalCashCollected:evts.filter(e=>e.outcome==='sale').reduce((s,e)=>s+parseFloat(String(e.cashCollectedSale||'0').replace(/[^0-9.]/g,''))||0,0),
+    // SDR-specific
+    outboundDemosScheduled:outDemos.length,
+    outboundDemosShowed:outDemos.filter(e=>e.outcome==='showed').length,
+    outboundDemosNoShow:outDemos.filter(e=>e.outcome==='no-show').length,
+    inboundDemosPushedToCollab:inDemos.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,
+    collabsFromInbound:inLeds.length,
+  };
+}
+
+function openEodModal(){
+  const dateStr=fmtDate(new Date());
+  const userId=_currentUser?.id;
+  const role=_calendarRole||'Closer';
+  const isSDR=role==='Setter';
+  const auto=getEodAutoData(dateStr,userId);
+  const mc=document.getElementById("modalContainer");
+  const userName=state.users.find(u=>u.id===userId)?.name||'';
+
+  let html='<div class="overlay" onclick="closeModal()"><div class="modal" style="width:560px;max-width:95vw;max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">';
+  html+='<div class="modal-hdr"><span class="modal-title">📋 End of Day Report — '+(isSDR?'SDR':'Closer')+'</span><button class="close-x" onclick="closeModal()">✕</button></div>';
+  html+='<div style="padding:14px 18px;border-bottom:1px solid var(--brd2);background:var(--bg2)">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+  html+='<span style="font-size:12px;color:var(--t1);font-weight:600">'+esc(userName)+'</span>';
+  html+='<span style="font-family:var(--fm);font-size:11px;color:var(--t3)">'+dateStr+'</span>';
+  html+='</div>';
+  html+='<div style="font-size:9px;color:var(--acc);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Auto-filled fields are highlighted in green</div>';
+  html+='</div>';
+  html+='<div style="padding:16px 18px">';
+
+  function autoField(label,val){
+    return '<div class="field field-row field-row-2"><div><div class="field-label">'+label+'</div></div><div><input class="fi mono" value="'+val+'" readonly style="background:rgba(62,207,74,.06);border-color:rgba(62,207,74,.15);color:var(--acc);text-align:right"></div></div>';
+  }
+  function manualField(id,label,type){
+    if(type==='textarea')return '<div class="field"><div class="field-label">'+label+'</div><textarea class="fi" id="'+id+'" rows="2" placeholder="..."></textarea></div>';
+    if(type==='yesno')return '<div class="field field-row field-row-2"><div><div class="field-label">'+label+'</div></div><div><select class="fi" id="'+id+'"><option value="yes">Yes</option><option value="no">No</option></select></div></div>';
+    return '<div class="field field-row field-row-2"><div><div class="field-label">'+label+'</div></div><div><input class="fi mono" id="'+id+'" placeholder="0" style="text-align:right"></div></div>';
+  }
+
+  if(isSDR){
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--acc);font-size:10px">INBOUND DEMOS</div>';
+    html+=autoField('Inbound Demos Scheduled',auto.inboundDemosScheduled);
+    html+=autoField('Showed',auto.demosShowed);
+    html+=autoField('No Showed',auto.demosNoShow);
+    html+=autoField('Rescheduled',auto.demosRescheduled);
+    html+=manualField('eodCancels','Cancels','num');
+    html+=autoField('Pushed To Collab',auto.inboundDemosPushedToCollab);
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--cyan);font-size:10px">OUTBOUND</div>';
+    html+=autoField('Outbound Demos Scheduled',auto.outboundDemosScheduled);
+    html+=autoField('Outbound Demos Showed',auto.outboundDemosShowed);
+    html+=autoField('Outbound No-Shows',auto.outboundDemosNoShow);
+    html+=manualField('eodOutDials','Outbound Dials','num');
+    html+=manualField('eodLists','Which Lists Did You Call Today?','textarea');
+    html+=manualField('eodMeaningful','Meaningful Conversations (Over 1 Min)','num');
+    html+=manualField('eodCollabsOutbound','Collabs Scheduled From Outbound','num');
+    html+=autoField('Collabs From Inbound Demos',auto.collabsFromInbound);
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--purple);font-size:10px">PERSONAL COLLABS</div>';
+    html+=manualField('eodPCollabsCal','Personal Collabs on Calendar','num');
+    html+=manualField('eodPCollabsShowed','Personal Collabs Showed','num');
+    html+=manualField('eodPCollabsClosed','Personal Collabs Closed','num');
+    html+=manualField('eodPCollabsNS','Personal Collabs No-Showed','num');
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--green);font-size:10px">SALES</div>';
+    html+=autoField('Closed Sets Today',auto.salesUnits);
+    html+=autoField('Contract Value','$'+auto.totalContractValue.toFixed(2));
+    html+=autoField('Cash Collected','$'+auto.totalCashCollected.toFixed(2));
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+=manualField('eodLeadQuality','Lead Quality (Stage 1-5)','num');
+    html+=manualField('eodConfirmed','All Calls Tomorrow Confirmed?','yesno');
+    html+=manualField('eodStuck','Anything You\'re Stuck On?','textarea');
+    html+=manualField('eodDrafts','Updated All Drafts in Close?','yesno');
+    html+=manualField('eodFeedback','Anything for Sales & Marketing?','textarea');
+  }else{
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--blue);font-size:10px">DEMOS</div>';
+    html+=autoField('Inbound Demos Scheduled',auto.inboundDemosScheduled);
+    html+=autoField('Demos Showed',auto.demosShowed);
+    html+=autoField('Demos Rescheduled',auto.demosRescheduled);
+    html+=autoField('Demos No Showed',auto.demosNoShow);
+    html+=manualField('eodCancels','Demos Cancelled','num');
+    html+=autoField('Pushed To Collab',auto.demosPushedToCollab);
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--purple);font-size:10px">COLLAB CALLS (LED REVIEWS)</div>';
+    html+=autoField('Collab Calls Scheduled',auto.inboundCollabsScheduled);
+    html+=autoField('Collab Calls Showed',auto.collabsShowed);
+    html+=autoField('Collab Calls Rescheduled',auto.collabsRescheduled);
+    html+=autoField('Collab Calls No Showed',auto.collabsNoShow);
+    html+=manualField('eodCollabCancels','Collab Calls Cancelled','num');
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--cyan);font-size:10px">SYNC CALLS</div>';
+    html+=autoField('Sync Calls Scheduled',auto.syncsScheduled);
+    html+=autoField('Sync Calls Showed',auto.syncsShowed);
+    html+=autoField('Sync Calls No-Show',auto.syncsNoShow);
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+='<div class="field-label" style="margin-bottom:10px;color:var(--green);font-size:10px">SALES</div>';
+    html+=autoField('Sales Units',auto.salesUnits);
+    html+=autoField('Contract Value','$'+auto.totalContractValue.toFixed(2));
+    html+=autoField('Cash Collected','$'+auto.totalCashCollected.toFixed(2));
+    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
+    html+=manualField('eodConfirmed','All Calls Tomorrow Confirmed?','yesno');
+    html+=manualField('eodDrafts','Updated All Drafts in Close?','yesno');
+    html+=manualField('eodFeedback','Anything for Sales & Marketing?','textarea');
+  }
+
+  html+='</div>';
+  html+='<div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button>';
+  html+='<button class="btn btn-acc" onclick="submitEodReport()">Submit EOD Report</button>';
+  html+='</div></div></div>';
+  mc.innerHTML=html;
+}
+
+async function submitEodReport(){
+  const dateStr=fmtDate(new Date());
+  const userId=_currentUser?.id;
+  const role=_calendarRole||'Closer';
+  const isSDR=role==='Setter';
+  const auto=getEodAutoData(dateStr,userId);
+  const gv=id=>{const el=document.getElementById(id);return el?el.value:'';};
+
+  const report={
+    user_id:userId,
+    date:dateStr,
+    role:isSDR?'SDR':'Closer',
+    // Auto-filled
+    inbound_demos_scheduled:auto.inboundDemosScheduled,
+    demos_showed:auto.demosShowed,
+    demos_rescheduled:auto.demosRescheduled,
+    demos_no_show:auto.demosNoShow,
+    demos_cancelled:parseInt(gv('eodCancels'))||0,
+    demos_pushed_to_collab:isSDR?auto.inboundDemosPushedToCollab:auto.demosPushedToCollab,
+    inbound_collabs_scheduled:auto.inboundCollabsScheduled,
+    collabs_showed:auto.collabsShowed,
+    collabs_rescheduled:auto.collabsRescheduled,
+    collabs_no_show:auto.collabsNoShow,
+    collabs_cancelled:parseInt(gv('eodCollabCancels'))||0,
+    syncs_scheduled:auto.syncsScheduled,
+    syncs_showed:auto.syncsShowed,
+    syncs_no_show:auto.syncsNoShow,
+    sales_units:auto.salesUnits,
+    total_contract_value:auto.totalContractValue,
+    total_cash_collected:auto.totalCashCollected,
+    // SDR-specific
+    outbound_demos_scheduled:auto.outboundDemosScheduled,
+    outbound_demos_showed:auto.outboundDemosShowed,
+    outbound_demos_no_show:auto.outboundDemosNoShow,
+    outbound_dials:parseInt(gv('eodOutDials'))||0,
+    lists_called:gv('eodLists'),
+    meaningful_conversations:parseInt(gv('eodMeaningful'))||0,
+    collabs_from_outbound:parseInt(gv('eodCollabsOutbound'))||0,
+    collabs_from_inbound:auto.collabsFromInbound||0,
+    personal_collabs_calendar:parseInt(gv('eodPCollabsCal'))||0,
+    personal_collabs_showed:parseInt(gv('eodPCollabsShowed'))||0,
+    personal_collabs_closed:parseInt(gv('eodPCollabsClosed'))||0,
+    personal_collabs_no_show:parseInt(gv('eodPCollabsNS'))||0,
+    lead_quality:parseInt(gv('eodLeadQuality'))||0,
+    // Shared manual
+    calls_confirmed:gv('eodConfirmed')||'yes',
+    drafts_updated:gv('eodDrafts')||'yes',
+    feedback:gv('eodFeedback'),
+    stuck_on:gv('eodStuck')||'',
+    submitted_at:new Date().toISOString()
+  };
+
+  try{
+    const {error}=await _sb.from('eod_reports').upsert(report,{onConflict:'user_id,date'});
+    if(error){console.error('EOD save error:',error);alert('Failed to save: '+error.message);return;}
+    closeModal();
+    alert('EOD Report submitted!');
+  }catch(e){
+    console.error('EOD save error:',e);
+    alert('Failed to save report.');
+  }
 }
 
 // ─── TIMEZONE SYSTEM ───
