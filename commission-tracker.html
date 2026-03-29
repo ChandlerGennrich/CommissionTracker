@@ -36,7 +36,7 @@ body{background:var(--bg0);color:var(--t1);font-family:var(--fb);min-height:100v
 .turbo-btn{font-family:var(--fm);font-size:14px;font-weight:700;letter-spacing:.06em;padding:12px 28px;border:2px solid var(--brd);background:var(--bg0);color:var(--t3);cursor:default;text-transform:uppercase;position:relative;white-space:nowrap;transition:color .3s,background .3s;}
 .turbo-btn.pre .turbo-gap{font-weight:600;color:var(--t2);}
 .turbo-btn.hit{border-color:var(--acc);color:var(--acc);background:rgba(62,207,74,.06);cursor:pointer;animation:turboPulse 2s ease-in-out infinite;}
-.turbo-btn.active{border-color:var(--orange);color:var(--orange);background:rgba(240,150,10,.06);cursor:default;animation:turboBorderPulse 2s ease-in-out infinite;}
+.turbo-btn.active{border-color:var(--orange);color:var(--orange);background:rgba(240,150,10,.06);cursor:pointer;animation:turboBorderPulse 2s ease-in-out infinite;}
 @keyframes turboPulse{0%,100%{box-shadow:0 0 0 rgba(62,207,74,0);}50%{box-shadow:0 0 24px rgba(62,207,74,.2);}}
 @keyframes turboBorderPulse{0%,100%{border-color:var(--orange);box-shadow:0 0 6px rgba(240,150,10,.15);}50%{border-color:rgba(240,150,10,.4);box-shadow:0 0 14px rgba(240,150,10,.25);}}
 .turbo-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
@@ -383,7 +383,6 @@ function genTD(yr){
   const tabs=[];
   for(let m=0;m<12;m++){
     const ld=lastDay(yr,m);const mn=MO_NAMES[m];const mk=MO_KEYS[m];const px=TID_PFX[m];
-    const febEnd=m===1?ld:15;
     tabs.push({id:px+'1',l:'1-15 '+mn.slice(0,3),p:mn+' '+yr,
       s:mn+' 15, '+yr,d:mn+' 22, '+yr,ms:m,d1:1,d2:15,mo:mk,yr:yr});
     tabs.push({id:px+'2',l:'16-'+ld+' '+mn.slice(0,3),p:mn+' '+yr,
@@ -396,7 +395,9 @@ function genTD(yr){
 let ALL_TD={};
 YEARS.forEach(y=>{ALL_TD[y]=genTD(y);});
 
-let AY=2026;let AT='j1';let S={};let turboActivated={};
+let AY=2026;let AT='j1';let S={};
+// turboActivated: { "2026_jan": { active: bool, crossing: { tabId, rowId, overage, cumulAtCross, timestamp } | null } }
+let turboActivated={};
 let _uid=Date.now();let _prev={s1:0,s4:0,f0:0};let _skipCalc=false;
 
 function nid(){return 'r'+(++_uid);}
@@ -469,51 +470,187 @@ function calcMTD(){
   return{recNew,revRec};
 }
 
-// ─── TURBO ───
+// ═══════════════════════════════════════════════════════════════
+// TURBO SYSTEM V2 — Threshold-aware, toggle on/off, partial split
+// ═══════════════════════════════════════════════════════════════
+
+// Detect which row crosses the $100k threshold (if any)
+// Scans all paid new-cash rows in the month in display order
+function detectThresholdCrossing(){
+  const tk=turboKey();const moTabs=getMonthTabs();
+  let cumul=0,crossingInfo=null;
+  for(const tid of moTabs){
+    const rows=TS()[tid]?.rows||[];
+    for(const r of rows){
+      if(!r.paid)continue;
+      if(EXCL_NEW_CASH.has(r.tp))continue;
+      const ca=pm(r.ca);const prev=cumul;cumul+=ca;
+      if(prev<TURBO_THRESHOLD&&cumul>=TURBO_THRESHOLD){
+        const existing=turboActivated[tk]?.crossing;
+        crossingInfo={tabId:tid,rowId:r.id,overage:cumul-TURBO_THRESHOLD,cumulAtCross:cumul,
+          timestamp:(existing?.rowId===r.id)?existing.timestamp:new Date().toISOString()};
+        break;
+      }
+    }
+    if(crossingInfo)break;
+  }
+  if(!turboActivated[tk])turboActivated[tk]={active:false,crossing:null};
+  if(crossingInfo){
+    turboActivated[tk].crossing=crossingInfo;
+  } else {
+    turboActivated[tk].crossing=null;
+    if(turboActivated[tk].active){turboActivated[tk].active=false;resetTurboComms();}
+  }
+  svTurbo();
+}
+
+// Migrate old turbo format (boolean) to new format ({active, crossing})
+// and detect threshold crossings for all active months
+function migrateTurboFormat(){
+  const keys=Object.keys(turboActivated);
+  let needsMigration=false;
+  keys.forEach(tk=>{
+    const val=turboActivated[tk];
+    if(typeof val==='boolean'){
+      turboActivated[tk]={active:val,crossing:null};
+      needsMigration=true;
+    } else if(val&&typeof val==='object'&&val.active===undefined){
+      turboActivated[tk]={active:false,crossing:null};
+      needsMigration=true;
+    }
+  });
+  // Detect threshold crossings for all active turbo months
+  const savedAY=AY,savedAT=AT;
+  Object.keys(turboActivated).forEach(tk=>{
+    const ti=turboActivated[tk];
+    if(!ti?.active)return;
+    const parts=tk.split('_');
+    const yr=parseInt(parts[0]);const moKey=parts[1];
+    if(!yr||!moKey)return;
+    const allTabs=ALL_TD[yr]||[];
+    const monthTab=allTabs.find(t=>t.mo===moKey);
+    if(!monthTab)return;
+    AY=yr;AT=monthTab.id;
+    ensureYear(yr);
+    detectThresholdCrossing();
+    if(turboActivated[tk]?.active&&turboActivated[tk]?.crossing)applyTurboRates();
+  });
+  AY=savedAY;AT=savedAT;
+  if(needsMigration||Object.keys(turboActivated).some(tk=>turboActivated[tk]?.active))svTurbo();
+}
+
+// Apply 14% to all applicable rows AFTER the crossing row
+// The crossing row itself stays at 10% (overage bonus added separately in calc)
+function applyTurboRates(){
+  const tk=turboKey();const ti=turboActivated[tk];
+  if(!ti?.active||!ti?.crossing)return;
+  const moTabs=getMonthTabs();let pastCrossing=false;
+  for(const tid of moTabs){
+    const rows=TS()[tid]?.rows||[];
+    for(const r of rows){
+      if(r.id===ti.crossing.rowId){
+        if(TURBO_AUTO_TYPES.has(r.tp))r.cm='10.00%';
+        pastCrossing=true;continue;
+      }
+      if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp)&&r.paid)r.cm='14.00%';
+    }
+  }
+}
+
+// Revert all 14% turbo rates back to 10%
+function resetTurboComms(){
+  const moTabs=getMonthTabs();
+  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{
+    if(TURBO_AUTO_TYPES.has(r.tp)&&r.cm==='14.00%')r.cm='10.00%';
+  });});
+}
+
+// Turbo additional: informational display of the extra 4% earned
+// This is NOT added to Total Commission (already baked into row commissions)
 function calcTabTurbo(){
-  const tk=turboKey();if(!turboActivated[tk])return 0;
-  const moTabs=getMonthTabs();let perTab=[];
-  moTabs.forEach(tid=>{let nc=0;(TS()[tid]?.rows||[]).forEach(r=>{if(r.paid&&!EXCL_NEW_CASH.has(r.tp))nc+=pm(r.ca);});perTab.push({tid,nc});});
-  let cumul=0,my=0;
-  perTab.forEach(t=>{const prev=cumul;cumul+=t.nc;if(t.tid===AT){my=Math.max(0,cumul-TURBO_THRESHOLD)-Math.max(0,prev-TURBO_THRESHOLD);}});
-  return my*0.04;
+  const tk=turboKey();const ti=turboActivated[tk];
+  if(!ti?.active||!ti?.crossing)return 0;
+  const rows=TS()[AT].rows;let extra=0,pastCrossing=false;
+  const crossHere=ti.crossing.tabId===AT;
+  if(!crossHere){const mt=getMonthTabs();if(mt.indexOf(AT)>mt.indexOf(ti.crossing.tabId))pastCrossing=true;else return 0;}
+  rows.forEach(r=>{if(!r.paid)return;
+    if(crossHere&&r.id===ti.crossing.rowId){if(TURBO_AUTO_TYPES.has(r.tp))extra+=(ti.crossing.overage||0)*0.04;pastCrossing=true;return;}
+    if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp))extra+=pm(r.ca)*0.04;
+  });
+  return extra;
 }
-function calcMTDTurbo(){const tk=turboKey();if(!turboActivated[tk])return 0;const mtd=calcMTD();if(mtd.recNew<=TURBO_THRESHOLD)return 0;return(mtd.recNew-TURBO_THRESHOLD)*0.04;}
+
+function calcMTDTurbo(){
+  const tk=turboKey();const ti=turboActivated[tk];
+  if(!ti?.active||!ti?.crossing)return 0;
+  const moTabs=getMonthTabs();let extra=0,pastCrossing=false;
+  for(const tid of moTabs){(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;
+    if(r.id===ti.crossing.rowId){if(TURBO_AUTO_TYPES.has(r.tp))extra+=(ti.crossing.overage||0)*0.04;pastCrossing=true;return;}
+    if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp))extra+=pm(r.ca)*0.04;
+  });}
+  return extra;
+}
+
 function calcMTDCommissions(){
-  const moTabs=getMonthTabs();let bc=0;
-  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);bc+=r.tp==='REFUND'?-(ca*co):(ca*co);});});
-  return bc+calcMTDTurbo();
+  const moTabs=getMonthTabs();const tk=turboKey();const ti=turboActivated[tk];let bc=0;
+  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);
+    let comm=r.tp==='REFUND'?-(ca*co):(ca*co);
+    if(ti?.active&&ti?.crossing?.rowId===r.id&&r.tp!=='REFUND')comm+=(ti.crossing.overage||0)*0.04;
+    bc+=comm;});});
+  return bc;
 }
-function isTurboActive(){return turboActivated[turboKey()]===true&&calcMTD().recNew>=TURBO_THRESHOLD;}
+
+function isTurboActive(){const v=turboActivated[turboKey()];if(typeof v==='boolean')return false;return v?.active===true&&!!v?.crossing;}
 
 function updateTurboState(){
   const mtd=calcMTD();const tk=turboKey();
   const btn=document.getElementById('turboBtn'),txt=document.getElementById('turboText');
   const gap=TURBO_THRESHOLD-mtd.recNew;
+  // Normalize old boolean format
+  if(typeof turboActivated[tk]==='boolean')turboActivated[tk]={active:turboActivated[tk],crossing:null};
+  const ti=turboActivated[tk]||{};
   document.getElementById('mtdNewCash').textContent=cur(mtd.recNew);
   document.getElementById('mtdRevenue').textContent=cur(mtd.revRec);
   document.getElementById('mtdTurbo').textContent=cur(calcMTDTurbo());
   document.getElementById('mtdComm').textContent=cur(calcMTDCommissions());
   if(mtd.recNew>=TURBO_THRESHOLD){
-    if(turboActivated[tk]){btn.className='turbo-btn active';txt.textContent='\u26A1 TURBO DEAL ACTIVE';}
+    if(ti.active){btn.className='turbo-btn active';txt.innerHTML='\u26A1 TURBO DEAL ACTIVE <span style="font-size:9px;opacity:.5;margin-left:6px;font-weight:400">(click to undo)</span>';}
     else{btn.className='turbo-btn hit';txt.textContent='\u26A1 TURBO DEAL UNLOCKED';}
   } else {
-    if(turboActivated[tk]){turboActivated[tk]=false;resetTurboComms();}
+    if(ti.active){ti.active=false;ti.crossing=null;turboActivated[tk]=ti;resetTurboComms();}
     btn.className='turbo-btn pre';txt.innerHTML='<span class="turbo-gap">'+cur(gap)+'</span> until Turbo Deal';
   }
   svTurbo();
 }
+
 function onTurboClick(){
   const tk=turboKey();const mtd=calcMTD();
-  if(mtd.recNew>=TURBO_THRESHOLD&&!turboActivated[tk]){
-    turboActivated[tk]=true;playTurboChime();
-    document.getElementById('turboBtn').className='turbo-btn active';
-    document.getElementById('turboText').textContent='\u26A1 TURBO DEAL ACTIVE';
-    svTurbo();autoSetTurboComms();calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
+  if(mtd.recNew<TURBO_THRESHOLD)return;
+  // Ensure new format (handles old boolean format too)
+  if(!turboActivated[tk]||typeof turboActivated[tk]==='boolean'){
+    turboActivated[tk]={active:!!turboActivated[tk],crossing:null};
+  }
+  const ti=turboActivated[tk];
+  if(ti.active){
+    // UNDO — deactivate turbo, revert all to 10%
+    ti.active=false;ti.crossing=null;resetTurboComms();svTurbo();
+    calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
+  } else {
+    // ACTIVATE — detect crossing, apply 14% to post-crossing rows
+    ti.active=true;detectThresholdCrossing();applyTurboRates();playTurboChime();svTurbo();
+    calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
   }
 }
-function autoSetTurboComms(){if(!isTurboActive())return;TS()[AT].rows.forEach(r=>{if(TURBO_AUTO_TYPES.has(r.tp)&&!r.auto)r.cm='14.00%';});}
-function resetTurboComms(){const moTabs=getMonthTabs();moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(TURBO_AUTO_TYPES.has(r.tp)&&r.cm==='14.00%'&&!r.auto)r.cm='10.00%';});});}
+
+// Quick calc for animation (includes overage bonus)
+function cqk(){
+  const rows=TS()[AT].rows;const tk=turboKey();const ti=turboActivated[tk];let rn=0,bc=0;
+  rows.forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);
+    let comm=r.tp==='REFUND'?-(ca*co):(ca*co);
+    if(ti?.active&&ti?.crossing?.rowId===r.id&&r.tp!=='REFUND')comm+=(ti.crossing.overage||0)*0.04;
+    if(!EXCL_NEW_CASH.has(r.tp))rn+=ca;bc+=comm;});
+  return{rn,bc,te:calcTabTurbo()};
+}
 
 // ─── SUPABASE ───
 const _sb = window.supabase.createClient(
@@ -726,6 +863,7 @@ function init(){
   ld();ldTurbo();
   AY=2026;AT='j1';
   YEARS.forEach(y=>ensureYear(y));
+  migrateTurboFormat();
   const sel=document.getElementById('yrSel');
   sel.innerHTML='';
   YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
@@ -761,25 +899,34 @@ function rAll(){
 function rTable(){
   const tb=document.getElementById('tbd');tb.innerHTML='';
   const rows=TS()[AT].rows;const turbo=isTurboActive();
+  const tkR=turboKey(),tiR=turboActivated[tkR];
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');const isRef=r.tp==='REFUND';
-    const ca=pm(r.ca),co=pp(r.cm),comm=isRef?-(ca*co):(ca*co);
-    const isAuto=r.auto,lk='';
+    const ca=pm(r.ca),co=pp(r.cm);const isAuto=r.auto,lk='';
+    // Crossing row detection for this render
+    const isCrossingRow=tiR?.active&&tiR?.crossing?.rowId===r.id;
+    let comm=isRef?-(ca*co):(ca*co);let turboBonus=0;
+    if(isCrossingRow&&!isRef&&TURBO_AUTO_TYPES.has(r.tp)){turboBonus=(tiR.crossing.overage||0)*0.04;comm+=turboBonus;}
     let cls='fi';if(isAuto)cls+=' auto-row';if(r.paid)cls+=' confirmed-row';
     tr.className=cls;
     const isTT=TURBO_AUTO_TYPES.has(r.tp);
     const commIsTurbo=turbo&&isTT&&co>=TURBO_RATE;
+    const commIsCrossing=isCrossingRow&&turboBonus>0;
+    // Notes: show turbo crossing info if applicable
+    const displayNotes=isCrossingRow&&turboBonus>0
+      ?'\u26A1 Turbo: '+cur(tiR.crossing.overage)+' over threshold (+'+cur(turboBonus)+')'+(r.nt?' | '+r.nt:'')
+      :r.nt;
     tr.innerHTML='<td class="rn">'+(i+1)+(isAuto?'<span class="auto-badge">auto</span>':'')+'</td>'+
       '<td>'+mSel('tp',i,TYPES,r.tp,isAuto)+'</td>'+
       '<td><input type="text" class="ci nm'+lk+'" placeholder="Dealer name..." value="'+esc(r.dl)+'" data-r="'+i+'" data-f="dl" oninput="upd(this)"></td>'+
       '<td><input type="date" class="ci'+lk+'" value="'+(r.dt||'')+'" data-r="'+i+'" data-f="dt" onchange="upd(this)"></td>'+
       '<td>'+mSel('pg',i,PROGS,r.pg,isAuto)+'</td>'+
       '<td><input type="text" class="ci mo'+lk+'" placeholder="$0.00" value="'+esc(r.ca)+'" data-r="'+i+'" data-f="ca" oninput="upd(this)" onblur="fmtM(this)"></td>'+
-      '<td>'+mSel('cm',i,CMS,r.cm,isAuto,commIsTurbo)+'</td>'+
+      '<td>'+mSel('cm',i,CMS,r.cm,isAuto,commIsTurbo||commIsCrossing)+'</td>'+
       '<td>'+mSel('tm',i,TRMS,r.tm,isAuto)+'</td>'+
-      '<td><input type="text" class="ci cm mo'+(isRef?' neg':'')+(commIsTurbo?' turbo':'')+'" readonly value="'+(Math.abs(comm)>0?cur(comm):'')+'"></td>'+
+      '<td><input type="text" class="ci cm mo'+(isRef?' neg':'')+(commIsTurbo||commIsCrossing?' turbo':'')+'" readonly value="'+(Math.abs(comm)>0?cur(comm):'')+'"></td>'+
       '<td class="chk-wrap"><input type="checkbox" class="chk" data-r="'+i+'"'+(r.paid?' checked':'')+' onchange="onPaid(this)"></td>'+
-      '<td><input type="text" class="ci nt" placeholder="Notes..." value="'+esc(r.nt)+'" data-r="'+i+'" data-f="nt" oninput="upd(this)"></td>'+
+      '<td><input type="text" class="ci nt" placeholder="Notes..." value="'+esc(displayNotes)+'" data-r="'+i+'" data-f="nt" oninput="upd(this)"></td>'+
       '<td><button class="db" onclick="delR('+i+')" title="Delete">&#x2715;</button></td>';
     tb.appendChild(tr);
   });
@@ -798,21 +945,21 @@ function mSel(f,ri,opts,cur,locked,turboHl){
 function onPaid(el){
   const i=+el.dataset.r;const was=TS()[AT].rows[i].paid;const now=el.checked;
   TS()[AT].rows[i].paid=now;
+  // Detect threshold crossing whenever paid status changes
+  detectThresholdCrossing();
+  if(isTurboActive())applyTurboRates();
   const p1=pm(document.getElementById('s1').textContent),p4=pm(document.getElementById('s4').textContent),pf=pm(document.getElementById('f0').textContent);
-  if(now&&!was){playCoinChime();calc(true);autoSetTurboComms();_skipCalc=true;rTable();_skipCalc=false;}
-  else{calc(false);const nv=cqk();animC('s1',p1,nv.rn,false);animC('s4',p4,nv.bc+nv.te,false);animC('f0',pf,nv.bc+nv.te,false);_skipCalc=true;rTable();_skipCalc=false;}
+  if(now&&!was){playCoinChime();calc(true);_skipCalc=true;rTable();_skipCalc=false;}
+  else{calc(false);const nv=cqk();animC('s1',p1,nv.rn,false);animC('s4',p4,nv.bc,false);animC('f0',pf,nv.bc,false);_skipCalc=true;rTable();_skipCalc=false;}
   rTabs();sv();
 }
-function cqk(){const rows=TS()[AT].rows;let rn=0,bc=0;rows.forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);if(!EXCL_NEW_CASH.has(r.tp))rn+=ca;bc+=r.tp==='REFUND'?-(ca*co):(ca*co);});return{rn,bc,te:calcTabTurbo()};}
 
 // ─── UPDATE ───
 function upd(el){
   const r=+el.dataset.r,f=el.dataset.f,row=TS()[AT].rows[r];row[f]=el.value;
   let needsRR=false;
-  if(f==='tp'&&isTurboActive()){
-    if(TURBO_AUTO_TYPES.has(el.value)){row.cm='14.00%';needsRR=true;}
-    else if(!TURBO_AUTO_TYPES.has(el.value)&&row.cm==='14.00%'){row.cm='10.00%';needsRR=true;}
-  }
+  // Re-detect threshold when cash or type changes
+  if(f==='ca'||f==='tp'){detectThresholdCrossing();if(isTurboActive()){applyTurboRates();needsRR=true;}}
   if(!needsRR&&(f==='ca'||f==='cm'||f==='tp')){
     const ca=pm(row.ca),co=pp(row.cm),isRef=row.tp==='REFUND',comm=isRef?-(ca*co):(ca*co);
     const cc=el.closest('tr').querySelector('.cm');
@@ -825,14 +972,20 @@ function upd(el){
 
 function onMeta(v){TS()[AT].rn=v;sv();}
 function addRow(){TS()[AT].rows.push(br());rTable();rTabs();const ins=document.querySelectorAll('#tbd input.nm:not(.locked)');if(ins.length)ins[ins.length-1].focus();sv();}
-function clearTab(){if(!confirm('Clear all data on this tab?'))return;TS()[AT].rows=[];TS()[AT].dr='';for(let i=0;i<10;i++)TS()[AT].rows.push(br());document.getElementById('f2').value='';rTable();rTabs();sv();}
-function delR(i){const row=TS()[AT].rows[i];if(!row.auto)clearLinked(row.id);TS()[AT].rows.splice(i,1);if(TS()[AT].rows.length===0)TS()[AT].rows.push(br());rTable();rTabs();sv();}
+function clearTab(){if(!confirm('Clear all data on this tab?'))return;TS()[AT].rows=[];TS()[AT].dr='';for(let i=0;i<10;i++)TS()[AT].rows.push(br());document.getElementById('f2').value='';detectThresholdCrossing();rTable();rTabs();sv();}
+function delR(i){const row=TS()[AT].rows[i];if(!row.auto)clearLinked(row.id);TS()[AT].rows.splice(i,1);if(TS()[AT].rows.length===0)TS()[AT].rows.push(br());detectThresholdCrossing();if(isTurboActive())applyTurboRates();rTable();rTabs();sv();}
 
 // ─── CALCULATIONS ───
 function calc(doAnim){
   const rows=TS()[AT].rows;let ent=0,recNew=0,unrecNew=0,revRec=0,baseComm=0;
-  rows.forEach(r=>{const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND',comm=isRef?-(ca*co):(ca*co);if(r.dl&&r.dl.trim())ent++;const inc=!EXCL_NEW_CASH.has(r.tp);if(r.paid){if(inc)recNew+=ca;revRec+=ca;baseComm+=comm;}else{if(inc)unrecNew+=ca;}});
-  const te=calcTabTurbo(),tc=baseComm+te;
+  const tk2=turboKey();const ti2=turboActivated[tk2];
+  rows.forEach(r=>{const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND';
+    let comm=isRef?-(ca*co):(ca*co);
+    // Add overage bonus for the threshold-crossing row
+    if(ti2?.active&&ti2?.crossing?.rowId===r.id&&!isRef&&TURBO_AUTO_TYPES.has(r.tp))comm+=(ti2.crossing.overage||0)*0.04;
+    if(r.dl&&r.dl.trim())ent++;const inc=!EXCL_NEW_CASH.has(r.tp);if(r.paid){if(inc)recNew+=ca;revRec+=ca;baseComm+=comm;}else{if(inc)unrecNew+=ca;}});
+  const te=calcTabTurbo(); // informational only — NOT added to tc
+  const tc=baseComm;
   document.getElementById('s0').textContent=ent;
   if(doAnim){animC('s1',_prev.s1,recNew,true);animC('s4',_prev.s4,tc,false);animC('f0',_prev.f0,tc,false);}
   else{document.getElementById('s1').textContent=cur(recNew);document.getElementById('s4').textContent=cur(tc);document.getElementById('f0').textContent=cur(tc);}
@@ -844,14 +997,18 @@ function calc(doAnim){
 }
 function calcF(){const c=_prev.s4||0,dr=pm(document.getElementById('f2').value);TS()[AT].dr=document.getElementById('f2').value;document.getElementById('f3').textContent=cur(c+dr);sv();}
 function fmtFI(el){const n=pm(el.value);if(n!==0)el.value=cur(n);}
-function fmtM(el){const n=pm(el.value);if(n>0){el.value=cur(n);TS()[AT].rows[+el.dataset.r][el.dataset.f]=el.value;}const row=TS()[AT].rows[+el.dataset.r];if(!row.auto&&(row.tp==='SPLIT PAY 1/2'||row.tp==='NEW SALE (MONTHLY)'))syncLinked(row,AT);calc(false);sv();}
+function fmtM(el){const n=pm(el.value);if(n>0){el.value=cur(n);TS()[AT].rows[+el.dataset.r][el.dataset.f]=el.value;}const row=TS()[AT].rows[+el.dataset.r];if(!row.auto&&(row.tp==='SPLIT PAY 1/2'||row.tp==='NEW SALE (MONTHLY)'))syncLinked(row,AT);detectThresholdCrossing();if(isTurboActive())applyTurboRates();calc(false);sv();}
 
 // ─── EXPORT ───
 function doExport(){
   const t=TD().find(x=>x.id===AT),rows=TS()[AT].rows,nm=TS()[AT].rn||'Unknown';
   let c='Commission Tracker - '+t.l+' '+AY+'\nRep,'+nm+'\nPeriod,'+t.p+'\nSubmitted,'+t.s+'\nComm Due,'+t.d+'\n\n';
   c+='Set or Sale,Dealership,Date,Program Value,Cash Collected,Comms %,Agreement Term,Commission,Paid,Notes\n';
-  rows.forEach(r=>{if(!r.dl?.trim()&&!r.ca&&!r.tp)return;const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND',comm=isRef?-(ca*co):(ca*co);c+='"'+r.tp+'","'+r.dl+'","'+r.dt+'","'+r.pg+'","'+r.ca+'","'+r.cm+'","'+r.tm+'","'+cur(comm)+'","'+(r.paid?'Yes':'No')+'","'+r.nt+'"\n';});
+  const tk2=turboKey();const ti2=turboActivated[tk2];
+  rows.forEach(r=>{if(!r.dl?.trim()&&!r.ca&&!r.tp)return;const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND';let comm=isRef?-(ca*co):(ca*co);
+    const isCR=ti2?.active&&ti2?.crossing?.rowId===r.id;
+    if(isCR&&!isRef&&TURBO_AUTO_TYPES.has(r.tp))comm+=(ti2.crossing.overage||0)*0.04;
+    c+='"'+r.tp+'","'+r.dl+'","'+r.dt+'","'+r.pg+'","'+r.ca+'","'+r.cm+'","'+r.tm+'","'+cur(comm)+'","'+(r.paid?'Yes':'No')+'","'+r.nt+'"\n';});
   c+='\nTotal Commission,'+document.getElementById('f0').textContent+'\nTurbo Additional,'+document.getElementById('f1t').textContent+'\n';
   c+='Draw Adjustments,'+(TS()[AT].dr||'$0.00')+'\nTOTAL,'+document.getElementById('f3').textContent+',USD\n\n';
   c+='Total Revenue Recognized,'+document.getElementById('f4').textContent+'\nRecognized New Cash,'+document.getElementById('f5').textContent+'\nUnrecognized New Cash,'+document.getElementById('f6').textContent+'\n';
