@@ -281,6 +281,11 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
 .login-toggle b{color:var(--acc);cursor:pointer;}
 .login-toggle:hover b{text-decoration:underline;}
 .login-loading{display:none;text-align:center;padding:20px;font-size:12px;color:var(--t4);}
+
+/* Outcome Indicators */
+.outcome-ind{font-size:9px;margin-left:3px;vertical-align:middle;font-family:var(--fb);}
+.outcome-ind.unmarked{color:var(--red);opacity:.5;}
+.outcome-ind.marked{color:var(--green);opacity:.6;}
 </style>
 </head>
 <body>
@@ -337,7 +342,7 @@ input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic
     <div class="hdr-div"></div>
     <button class="btn btn-filter on" id="filterToggle" onclick="toggleSidebar()">☰ Filters</button>
     <button class="btn" id="btnTeam" onclick="openTeamModal()" style="display:none">👥 Team</button>
-    <button class="btn" onclick="openEodModal()" style="background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3);color:var(--orange)">📋 EOD Report</button>
+    <button class="btn" onclick="tryOpenEod()" style="background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3);color:var(--orange)">📋 EOD Report</button>
     <div class="hdr-div"></div>
     <span style="font-size:10px;color:var(--t5);font-family:var(--fm)" id="userEmail"></span>
     <button class="btn" onclick="doLogout()">Logout</button>
@@ -624,6 +629,61 @@ function outcomeDotHtml(outcome){
   const o=OUTCOMES.find(x=>x.id===outcome);
   if(!o)return"";
   return `<span class="outcome-dot" style="background:${o.color}" title="${o.full}"></span>`;
+}
+
+// ─── OUTCOME INDICATOR (✓/✗ on events) ───
+function needsOutcome(evt){
+  // Only scheduled calls with a time need outcome tracking
+  // Exclude GCal-imported events that aren't DA call types
+  if(!evt.startTime)return false;
+  if(evt.gcalImported&&evt.type==='demo'&&!evt.dealership)return false;
+  return true;
+}
+
+function outcomeIndicatorHtml(evt){
+  if(!needsOutcome(evt))return'';
+  if(evt.outcome)return'<span class="outcome-ind marked" title="Outcome: '+esc(evt.outcome)+'">✓</span>';
+  return'<span class="outcome-ind unmarked" title="No outcome logged">✗</span>';
+}
+
+function getUnmarkedEventsToday(userId){
+  const today=fmtDate(new Date());
+  return state.events.filter(e=>{
+    if(e.date!==today)return false;
+    if(e.closerId!==userId&&e.sdrId!==userId)return false;
+    if(!needsOutcome(e))return false;
+    if(e.outcome)return false;
+    return true;
+  });
+}
+
+function tryOpenEod(){
+  const userId=_currentUser?.id;if(!userId)return;
+  const unmarked=getUnmarkedEventsToday(userId);
+  if(unmarked.length>0){
+    const mc=document.getElementById("modalContainer");
+    mc.innerHTML='<div class="overlay" onclick="closeModal()"><div class="modal" style="width:420px;max-width:95vw" onclick="event.stopPropagation()">'+
+      '<div class="modal-hdr"><span class="modal-title">⚠ Unmarked Outcomes</span><button class="close-x" onclick="closeModal()">✕</button></div>'+
+      '<div style="padding:24px 18px;text-align:center">'+
+        '<div style="font-size:36px;margin-bottom:12px">⚠️</div>'+
+        '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:8px">You have '+unmarked.length+' unmarked call outcome'+(unmarked.length>1?'s':'')+' today</div>'+
+        '<div style="font-size:12px;color:var(--t3);margin-bottom:16px">Log those outcomes before submitting your EOD report.</div>'+
+        '<div style="text-align:left;padding:8px 12px;background:var(--bg2);border:1px solid var(--brd2);max-height:200px;overflow-y:auto">'+
+          unmarked.map(e=>{
+            const t=EVENT_TYPES.find(x=>x.id===e.type);
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd3)">'+
+              '<span class="outcome-ind unmarked">✗</span>'+
+              '<span style="font-size:11px;color:var(--t1)">'+esc(e.title)+'</span>'+
+              '<span style="font-family:var(--fm);font-size:10px;color:var(--t5);margin-left:auto">'+(e.startTime?fmtTimeDisplay(e.startTime):'')+'</span>'+
+            '</div>';
+          }).join('')+
+        '</div>'+
+      '</div>'+
+      '<div class="modal-foot"><div></div><button class="btn btn-acc" onclick="closeModal()">Got it</button></div>'+
+    '</div></div>';
+    return;
+  }
+  openEodModal();
 }
 
 function setQuickOutcome(evtId,outcome){
@@ -1206,7 +1266,7 @@ function renderMonth(){
       const t=EVENT_TYPES.find(x=>x.id===evt.type);
       html+=`<div class="month-ev${evt.outcome==='cancelled'?' cancelled':''}" style="background:${t?t.color:"#555"}18;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
       if(evt.startTime)html+=`<span class="month-ev-time">${fmtTimeDisplay(evt.startTime)}</span>`;
-      html+=`${evt.gcalImported?'<span style="opacity:.5;font-size:8px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
+      html+=`${evt.gcalImported?'<span style="opacity:.5;font-size:8px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}${outcomeIndicatorHtml(evt)}${outcomeDotHtml(evt.outcome)}`;
       html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
       html+=`</div>`;
     });
@@ -1245,7 +1305,7 @@ function renderWeek(){
         const topPx=Math.round((startMin/60)*100);
         const hPx=Math.round((durMins/60)*100);
         html+=`<div class="slot-ev${evt.outcome==='cancelled'?' cancelled':''}" style="background:${t?t.color:"#555"}22;border-color:${t?t.color:"#555"};top:${topPx}px;height:${hPx}px" onclick="event.stopPropagation();showDetail('${evt.id}')">
-          <span class="slot-ev-time">${fmtTimeDisplay(evt.startTime)} </span>${evt.gcalImported?'📅 ':''}${esc(evt.title)}${outcomeDotHtml(evt.outcome)}`;
+          <span class="slot-ev-time">${fmtTimeDisplay(evt.startTime)} </span>${evt.gcalImported?'📅 ':''}${esc(evt.title)}${outcomeIndicatorHtml(evt)}${outcomeDotHtml(evt.outcome)}`;
         html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
         html+=`</div>`;
       });
@@ -1289,7 +1349,7 @@ function renderDay(){
       const hPx=Math.round((dur/60)*100);
       html+=`<div class="day-ev${evt.outcome==='cancelled'?' cancelled':''}" style="background:${t?t.color:"#555"}15;border-color:${t?t.color:"#555"};min-height:${hPx}px" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
       html+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
-      html+=`<span class="day-ev-title">${evt.gcalImported?'<span style="opacity:.6;font-size:11px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}</span>`;
+      html+=`<span class="day-ev-title">${evt.gcalImported?'<span style="opacity:.6;font-size:11px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}${outcomeIndicatorHtml(evt)}</span>`;
       html+=`<span class="day-ev-time">${fmtTimeDisplay(evt.startTime)}${evt.endTime?" - "+fmtTimeDisplay(evt.endTime):""} <span style="color:var(--t5)">${dur}m</span></span>`;
       html+=`</div>`;
       const metaParts=[];
@@ -2092,7 +2152,7 @@ function openEodModal(){
     html+=autoField('Showed',auto.demosShowed);
     html+=autoField('No Showed',auto.demosNoShow);
     html+=autoField('Rescheduled',auto.demosRescheduled);
-    html+=manualField('eodCancels','Cancels','num');
+    html+=autoField('Cancels',auto.demosCancelled);
     html+=autoField('Pushed To Collab',auto.inboundDemosPushedToCollab);
     html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
     html+='<div class="field-label" style="margin-bottom:10px;color:var(--cyan);font-size:10px">OUTBOUND</div>';
@@ -2127,7 +2187,7 @@ function openEodModal(){
     html+=autoField('Demos Showed',auto.demosShowed);
     html+=autoField('Demos Rescheduled',auto.demosRescheduled);
     html+=autoField('Demos No Showed',auto.demosNoShow);
-    html+=manualField('eodCancels','Demos Cancelled','num');
+    html+=autoField('Demos Cancelled',auto.demosCancelled);
     html+=autoField('Pushed To Collab',auto.demosPushedToCollab);
     html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
     html+='<div class="field-label" style="margin-bottom:10px;color:var(--purple);font-size:10px">COLLAB CALLS (LED REVIEWS)</div>';
@@ -2135,7 +2195,7 @@ function openEodModal(){
     html+=autoField('Collab Calls Showed',auto.collabsShowed);
     html+=autoField('Collab Calls Rescheduled',auto.collabsRescheduled);
     html+=autoField('Collab Calls No Showed',auto.collabsNoShow);
-    html+=manualField('eodCollabCancels','Collab Calls Cancelled','num');
+    html+=autoField('Collab Calls Cancelled',auto.collabsCancelled);
     html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
     html+='<div class="field-label" style="margin-bottom:10px;color:var(--cyan);font-size:10px">SYNC CALLS</div>';
     html+=autoField('Sync Calls Scheduled',auto.syncsScheduled);
@@ -2176,13 +2236,13 @@ async function submitEodReport(){
     demos_showed:auto.demosShowed,
     demos_rescheduled:auto.demosRescheduled,
     demos_no_show:auto.demosNoShow,
-    demos_cancelled:parseInt(gv('eodCancels'))||0,
+    demos_cancelled:auto.demosCancelled,
     demos_pushed_to_collab:isSDR?auto.inboundDemosPushedToCollab:auto.demosPushedToCollab,
     inbound_collabs_scheduled:auto.inboundCollabsScheduled,
     collabs_showed:auto.collabsShowed,
     collabs_rescheduled:auto.collabsRescheduled,
     collabs_no_show:auto.collabsNoShow,
-    collabs_cancelled:parseInt(gv('eodCollabCancels'))||0,
+    collabs_cancelled:auto.collabsCancelled,
     syncs_scheduled:auto.syncsScheduled,
     syncs_showed:auto.syncsShowed,
     syncs_no_show:auto.syncsNoShow,
