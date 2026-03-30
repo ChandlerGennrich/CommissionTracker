@@ -845,10 +845,10 @@ let _saveTimer;
 async function saveToSupabase(){
   if(!_currentUser) return;
   const saveId = _viewingUserId || _currentUser.id;
-  if(saveId !== _currentUser.id) return;
+  if(saveId !== _currentUser.id && !_isAdmin) return;
   try {
     await _sb.from('commission_data').upsert({
-      user_id: _currentUser.id, state: S, turbo: turboActivated, updated_at: new Date().toISOString()
+   user_id: saveId, state: S, turbo: turboActivated, updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
   } catch(e){ console.warn('Save error:', e); }
 }
