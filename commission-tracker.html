@@ -3,417 +3,664 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calendar — Dealership Accelerator</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Commission Tracker — Dealership Accelerator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
-  --bg0:#0a0a0a;--bg1:#121218;--bg2:#0e0e14;--bg3:#111118;--bgH:#1a1a22;
-  --brd:#252530;--brd2:#1e1e28;--brd3:#141420;
-  --acc:#D3FB40;--accD:#a8c933;--accG:rgba(211,251,64,0.08);--accG2:rgba(211,251,64,0.04);
-  --t1:#e8e8e8;--t2:#b8b8c8;--t3:#888;--t4:#666;--t5:#555;--t6:#444;--t7:#333;
-  --blue:#3b82f6;--green:#22c55e;--orange:#f97316;--purple:#a855f7;
-  --red:#ef4444;--yellow:#eab308;--cyan:#06b6d4;--pink:#ec4899;--slate:#64748b;
-  --fb:'Inter',-apple-system,sans-serif;--fm:'JetBrains Mono',monospace;
+:root{
+  --bg0:#0a0a0a;--bg1:#111;--bg2:#161616;--bgH:#1a1f1a;--bgI:#1c1c1c;
+  --brd:#2a2a2a;--acc:#3ecf4a;--accD:#2a8f32;--accG:rgba(62,207,74,.08);
+  --t1:#e8e8e8;--t2:#888;--t3:#555;
+  --red:#e04040;--redD:rgba(224,64,64,.12);
+  --orange:#f0960a;--orangeD:rgba(240,150,10,.15);
+  --fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:var(--fb);background:var(--bg0);color:var(--t2);min-height:100vh;font-size:14px;line-height:1.5;overflow:hidden;}
-
-/* WATERMARK */
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.015;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 220'%3E%3Cpath fill='%23ffffff' d='M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z'/%3E%3Cpath fill='%23ffffff' d='M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z'/%3E%3C/svg%3E");
-  background-size:120px 150px;background-repeat:repeat;}
-
-/* ─── HEADER ─── */
-.hdr{position:sticky;top:0;z-index:100;background:var(--bg1);border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;}
-.hdr-l{display:flex;align-items:center;gap:12px;}
-.hdr-l svg{flex-shrink:0;}
-.hdr-brand{font-size:14px;font-weight:800;color:var(--acc);letter-spacing:-0.02em;}
-.hdr-div{width:1px;height:18px;background:var(--brd);margin:0 4px;}
-.hdr-sub{font-size:10px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:0.08em;}
-.hdr-r{display:flex;align-items:center;gap:6px;}
-
-/* View Toggle */
-.view-tog{display:flex;background:var(--bgH);border-radius:6px;padding:3px;gap:2px;}
-.view-btn{padding:6px 14px;border:none;border-radius:4px;background:transparent;color:var(--t4);font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--fb);transition:all .15s;}
-.view-btn.on{background:var(--acc);color:var(--bg0);}
-.view-btn:hover:not(.on){background:var(--brd);color:var(--t3);}
-
-/* Buttons */
-.btn{padding:6px 12px;border:1px solid var(--brd);background:var(--bgH);color:var(--t3);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.04em;transition:all .15s;white-space:nowrap;}
+body{background:var(--bg0);color:var(--t1);font-family:var(--fb);min-height:100vh;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--brd);background:var(--bg1);position:sticky;top:0;z-index:100;}
+.hdr-l{display:flex;align-items:center;gap:14px;}
+.hdr-l img{height:22px;}
+.hdr-d{width:1px;height:18px;background:var(--brd);}
+.hdr-t{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);}
+.hdr-t span{color:var(--acc);}
+.hdr-r{display:flex;gap:5px;align-items:center;}
+.btn{font-family:var(--fb);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--brd);background:var(--bgI);color:var(--t2);cursor:pointer;transition:all .2s;}
 .btn:hover{border-color:var(--acc);color:var(--acc);background:var(--accG);}
-.btn-acc{border-color:var(--acc);background:var(--acc);color:var(--bg0);font-weight:700;}
-.btn-acc:hover{background:#e4ff6a;box-shadow:0 0 14px rgba(211,251,64,.2);}
-.btn-red{color:var(--red);border-color:rgba(239,68,68,.3);}
-.btn-red:hover{background:rgba(239,68,68,.08);border-color:var(--red);}
-.btn-filter{padding:6px 10px;}
-.btn-filter.on{background:var(--accG);color:var(--acc);border-color:rgba(211,251,64,.2);}
-
-/* ─── NAV BAR ─── */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:var(--bg3);border-bottom:1px solid var(--brd2);}
-.nav-l{display:flex;align-items:center;gap:8px;}
-.nav-title{font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-0.01em;}
-.nav-r{display:flex;align-items:center;gap:10px;}
-.ev-count{font-family:var(--fm);font-size:11px;color:var(--t5);background:#161616;border:1px solid var(--brd);padding:4px 8px;}
-
-/* ─── LAYOUT ─── */
-.body-wrap{display:flex;height:calc(100vh - 108px);position:relative;z-index:1;}
-
-/* SIDEBAR */
-.sidebar{width:240px;min-width:240px;border-right:1px solid var(--brd2);background:var(--bg2);padding:16px 14px;overflow-y:auto;}
-.sidebar.hidden{display:none;}
-.hidden{display:none!important;}
-.side-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t6);margin-bottom:8px;}
-.side-btn{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:1px solid transparent;background:transparent;color:var(--t4);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fb);border-radius:4px;margin-bottom:2px;text-align:left;transition:all .1s;}
-.side-btn:hover{background:rgba(255,255,255,.03);}
-.side-btn.on{background:var(--accG);color:var(--t1);border-color:rgba(211,251,64,.15);}
-.side-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.side-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
-.side-role{margin-left:auto;font-size:10px;color:var(--t6);font-family:var(--fm);}
-.clear-btn{font-size:10px;color:var(--t5);background:none;border:none;cursor:pointer;font-family:var(--fb);padding:2px 0;text-decoration:underline;margin-top:4px;}
-
-/* Stats Box */
-.stats-box{margin-top:24px;padding:12px 10px;background:var(--bg3);border:1px solid var(--brd2);}
-.stats-num{font-family:var(--fm);font-size:18px;font-weight:600;color:var(--acc);margin-bottom:4px;}
-.stats-sub{font-size:10px;color:var(--t5);}
-.stats-row{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;}
-.stats-row-l{color:var(--t4);}
-.stats-row-v{font-family:var(--fm);font-weight:600;}
-
-/* ─── CALENDAR MAIN ─── */
-.cal-main{flex:1;overflow-y:auto;}
-
-/* Month Grid */
-.month-hdr{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--brd2);}
-.month-hdr-cell{padding:8px 0;text-align:center;font-size:10px;font-weight:600;color:var(--t5);text-transform:uppercase;letter-spacing:0.08em;background:var(--bg2);}
-.month-grid{display:grid;grid-template-columns:repeat(7,1fr);}
-.month-cell{min-height:100px;padding:4px 6px;border-right:1px solid var(--brd);border-bottom:1px solid var(--brd);background:var(--bg0);cursor:pointer;transition:background .1s;}
-.month-cell:hover{background:#0f0f18;}
-.month-cell.outside{background:#08080c;}
-.month-cell.outside:hover{background:#0c0c12;}
-.month-cell.today{background:var(--accG2);}
-.month-day{font-size:12px;font-weight:500;color:var(--t3);margin-bottom:4px;font-family:var(--fm);}
-.month-cell.today .month-day{font-weight:700;color:var(--acc);}
-.month-cell.outside .month-day{color:var(--t7);}
-.month-ev{font-size:10px;padding:2px 5px;margin-bottom:2px;border-radius:2px;border-left:2px solid;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:background .1s;}
-.month-ev:hover{filter:brightness(1.3);}
-.month-ev.cancelled{text-decoration:line-through;opacity:.5;}
-.month-ev-time{font-family:var(--fm);font-size:9px;color:var(--t3);margin-right:4px;}
-.month-more{font-size:9px;color:var(--t5);font-weight:600;padding:1px 5px;}
-
-/* Week/Day Grid */
-.week-hdr{display:grid;border-bottom:2px solid var(--brd);position:sticky;top:0;z-index:10;background:var(--bg2);}
-.week-hdr-cell{padding:10px 0;text-align:center;border-left:2px solid var(--brd);}
-.week-hdr-day{font-size:11px;font-weight:600;color:var(--t5);text-transform:uppercase;letter-spacing:0.08em;}
-.week-hdr-num{font-size:20px;font-weight:700;color:var(--t3);font-family:var(--fm);margin-top:2px;}
-.week-hdr-num.today{color:var(--acc);}
-.time-grid{display:grid;position:relative;}
-.time-label{padding:0 8px;display:flex;align-items:flex-start;justify-content:flex-end;height:100px;border-bottom:1px solid var(--brd);}
-.time-label span{font-size:10px;color:var(--t5);font-family:var(--fm);margin-top:-6px;}
-.time-slot{height:100px;border-left:2px solid var(--brd);border-bottom:1px solid var(--brd);cursor:pointer;padding:0;transition:background .1s;position:relative;overflow:visible;}
-.time-slot:hover{background:rgba(211,251,64,.03);}
-.slot-ev{font-size:12px;padding:4px 6px;border-left:3px solid;color:#ddd;border-radius:2px;cursor:pointer;line-height:1.4;position:absolute;left:2px;right:2px;z-index:2;overflow:hidden;box-sizing:border-box;}
-.slot-ev.cancelled{text-decoration:line-through;opacity:.5;}
-.slot-ev:hover{filter:brightness(1.3);z-index:3;}
-.slot-ev-time{font-family:var(--fm);font-size:10px;color:var(--t3);}
-
-/* Day View */
-.day-hour{display:flex;min-height:100px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .1s;}
-.day-hour:hover{background:rgba(211,251,64,.02);}
-.day-hour-label{width:80px;padding:6px 12px 0 0;text-align:right;flex-shrink:0;}
-.day-hour-label span{font-size:12px;color:var(--t5);font-family:var(--fm);}
-.day-hour-content{flex:1;padding:4px 8px;border-left:2px solid var(--brd);}
-.day-ev{padding:8px 12px;border-left:3px solid;color:#ccc;border-radius:3px;margin-bottom:4px;cursor:pointer;transition:background .1s;}
-.day-ev:hover{filter:brightness(1.2);}
-.day-ev.cancelled{text-decoration:line-through;opacity:.5;}
-.day-ev-title{font-size:14px;font-weight:600;color:var(--t1);}
-.day-ev-time{font-size:11px;font-family:var(--fm);color:var(--t3);}
-.day-ev-meta{margin-top:4px;font-size:12px;color:#777;}
-.day-ev-notes{margin-top:4px;font-size:12px;color:var(--t5);}
-
-/* All Day Bar */
-.allday-bar{padding:8px 16px;border-bottom:1px solid var(--brd2);background:var(--bg2);}
-.allday-label{font-size:10px;color:var(--t5);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-right:12px;}
-.allday-ev{display:inline-block;font-size:11px;padding:3px 8px;border-left:2px solid;color:#ccc;cursor:pointer;margin-right:6px;border-radius:2px;}
-
-/* ─── MODAL ─── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadeIn .15s ease-out;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.modal{background:var(--bg1);border:1px solid var(--brd);max-height:90vh;overflow-y:auto;}
-.modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--brd2);}
-.modal-title{font-size:13px;font-weight:700;color:var(--t1);text-transform:uppercase;letter-spacing:0.04em;}
-.close-x{background:none;border:none;color:var(--t5);font-size:16px;cursor:pointer;padding:4px 8px;font-family:var(--fb);transition:color .15s;}
-.close-x:hover{color:var(--t1);}
-.modal-body{padding:16px 18px;}
-.modal-foot{display:flex;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--brd2);}
-
-/* Form */
-.field{margin-bottom:12px;}
-.field-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);margin-bottom:4px;}
-.field-row{display:grid;gap:12px;}
-.field-row-2{grid-template-columns:1fr 1fr;}
-.field-row-3{grid-template-columns:1fr 1fr 1fr;}
-input.fi,select.fi,textarea.fi{width:100%;font-family:var(--fb);font-size:12px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:8px 10px;transition:border-color .15s;outline:none;}
-input[type="date"].fi,input[type="time"].fi{color-scheme:dark;cursor:pointer;min-height:36px;}
-input[type="date"].fi::-webkit-calendar-picker-indicator,input[type="time"].fi::-webkit-calendar-picker-indicator{filter:invert(0.7);cursor:pointer;padding:4px;}
-input.fi:focus,select.fi:focus,textarea.fi:focus{border-color:var(--acc);}
-textarea.fi{resize:vertical;min-height:60px;}
-select.fi{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;}
-input.fi.mono{font-family:var(--fm);font-size:12px;}
-input.fi::placeholder,textarea.fi::placeholder{color:var(--t5);font-style:italic;}
-
-/* Detail */
-.detail-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1a1a22;}
-.detail-label{font-size:11px;color:var(--t5);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
-.detail-val{font-size:12px;color:#ccc;font-weight:500;}
-.detail-val.mono{font-family:var(--fm);}
-.detail-notes{margin-top:10px;padding:8px 10px;background:var(--bg2);border:1px solid var(--brd2);font-size:12px;color:var(--t3);line-height:1.5;white-space:pre-wrap;}
-.type-badge{font-size:10px;padding:2px 6px;font-weight:600;border-radius:2px;text-transform:uppercase;letter-spacing:0.04em;}
-.outcome-badge{font-size:10px;padding:2px 6px;font-weight:600;border-radius:2px;text-transform:uppercase;letter-spacing:0.04em;}
-
-/* Team Modal */
-.team-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #1a1a22;}
-.team-info{display:flex;align-items:center;gap:10px;}
-.team-name{font-size:13px;font-weight:600;color:var(--t1);}
-.team-role{font-size:10px;color:var(--t5);font-family:var(--fm);background:#161616;padding:2px 6px;border:1px solid var(--brd2);}
-.team-actions{display:flex;gap:6px;}
-.team-form{padding:12px 18px;border-top:1px solid var(--brd2);background:var(--bg2);}
-.color-picker{display:flex;gap:6px;margin-bottom:12px;}
-.color-dot{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:border .1s;}
-.color-dot.on{border-color:#fff;}
-.color-dot:hover{border-color:rgba(255,255,255,.5);}
-
-/* Outcome Quick Buttons */
-.outcome-row{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;}
-.oq-btn{font-size:8px;font-weight:700;padding:1px 4px;border:1px solid transparent;background:rgba(255,255,255,.04);color:var(--t5);cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.03em;transition:all .12s;line-height:1.4;}
-.oq-btn:hover{filter:brightness(1.4);}
-.oq-btn[data-oc="showed"]{border-color:rgba(59,130,246,.25);color:#5b9cf6;}
-.oq-btn[data-oc="showed"].active,.oq-btn[data-oc="showed"]:hover{background:rgba(59,130,246,.15);border-color:#3b82f6;color:#3b82f6;}
-.oq-btn[data-oc="no-show"]{border-color:rgba(239,68,68,.25);color:#f07070;}
-.oq-btn[data-oc="no-show"].active,.oq-btn[data-oc="no-show"]:hover{background:rgba(239,68,68,.15);border-color:#ef4444;color:#ef4444;}
-.oq-btn[data-oc="rescheduled"]{border-color:rgba(249,115,22,.25);color:#fb9a4b;}
-.oq-btn[data-oc="rescheduled"].active,.oq-btn[data-oc="rescheduled"]:hover{background:rgba(249,115,22,.15);border-color:#f97316;color:#f97316;}
-.oq-btn[data-oc="sale"]{border-color:rgba(34,197,94,.25);color:#4ade80;}
-.oq-btn[data-oc="sale"].active,.oq-btn[data-oc="sale"]:hover{background:rgba(34,197,94,.15);border-color:#22c55e;color:#22c55e;}
-.oq-btn[data-oc="cancelled"]{border-color:rgba(100,116,139,.25);color:#94a3b8;}
-.oq-btn[data-oc="cancelled"].active,.oq-btn[data-oc="cancelled"]:hover{background:rgba(100,116,139,.15);border-color:#64748b;color:#64748b;}
-.outcome-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:4px;flex-shrink:0;}
-.month-ev .outcome-row{display:none;}
-.month-ev:hover .outcome-row{display:flex;}
-.month-ev .outcome-dot{vertical-align:middle;}
-.slot-ev .outcome-row{display:none;}
-.slot-ev:hover .outcome-row{display:flex;}
-.resched-link{font-size:10px;color:var(--orange);cursor:pointer;text-decoration:underline;font-family:var(--fm);}
-.resched-link:hover{color:#fbbf24;}
-
-/* Reschedule Mini Modal */
-.resched-modal{background:var(--bg1);border:1px solid var(--brd);padding:0;width:340px;max-width:95vw;}
-
-/* ─── INTEGRATIONS UI (Steps 9-13) ─── */
-.integ-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:600;padding:2px 6px;border:1px solid;text-transform:uppercase;letter-spacing:0.04em;}
-.integ-badge.mock{border-color:rgba(249,115,22,.3);color:var(--orange);background:rgba(249,115,22,.06);}
-.integ-badge.live{border-color:rgba(34,197,94,.3);color:var(--green);background:rgba(34,197,94,.06);}
-.integ-badge.off{border-color:var(--brd);color:var(--t6);background:transparent;}
-.lookup-btn{padding:6px 10px;border:1px solid var(--brd);background:var(--bgH);color:var(--t3);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.04em;transition:all .15s;white-space:nowrap;}
-.lookup-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(6,182,212,.08);}
-.lookup-btn.loading{pointer-events:none;color:var(--t5);}
-.lookup-result{font-size:11px;color:var(--cyan);font-family:var(--fm);padding:4px 0;display:flex;align-items:center;gap:6px;}
-.zoom-link{display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);font-size:11px;font-family:var(--fm);color:var(--blue);cursor:pointer;text-decoration:none;transition:all .12s;word-break:break-all;}
-.zoom-link:hover{background:rgba(59,130,246,.12);border-color:var(--blue);}
-.gcal-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06);color:var(--green);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.04em;transition:all .12s;}
-.gcal-btn:hover{background:rgba(34,197,94,.12);border-color:var(--green);}
-.gcal-btn.synced{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.12);}
-.close-link{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid rgba(168,100,245,.3);background:rgba(168,100,245,.06);color:var(--purple);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--fm);text-decoration:none;transition:all .12s;}
-.close-link:hover{background:rgba(168,100,245,.12);border-color:var(--purple);}
-.attendee-list{margin-top:6px;}
-.attendee-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;margin:2px 4px 2px 0;background:rgba(255,255,255,.04);border:1px solid var(--brd);font-size:11px;color:var(--t3);font-family:var(--fm);}
-.attendee-chip .att-x{cursor:pointer;color:var(--t5);font-size:12px;margin-left:2px;font-family:var(--fb);}
-.attendee-chip .att-x:hover{color:var(--red);}
-.attendee-add{display:flex;gap:6px;margin-top:6px;}
-.attendee-add input{flex:1;}
-.invite-status{font-size:10px;padding:2px 6px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
-.invite-status.pending{color:var(--yellow);border:1px solid rgba(234,179,8,.3);background:rgba(234,179,8,.06);}
-.invite-status.sent{color:var(--green);border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06);}
-.integ-section{margin-top:12px;padding:10px;background:var(--bg2);border:1px solid var(--brd2);}
-.integ-section-title{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.integ-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid #1a1a22;}
-.integ-row-info{display:flex;align-items:center;gap:10px;}
-.integ-icon{font-size:18px;}
-.integ-name{font-size:13px;font-weight:600;color:var(--t1);}
-.integ-desc{font-size:10px;color:var(--t5);}
-.integ-status{display:flex;align-items:center;gap:8px;}
-
-@media(max-width:768px){
-  .sidebar{width:200px;min-width:200px;}
-  .hdr-brand{font-size:12px;}
-  .month-cell{min-height:80px;}
-}
-@media(max-width:600px){
-  .sidebar{display:none!important;}
-  .hdr{padding:0 12px;}
-  .nav{padding:8px 12px;}
-}
-
-/* Timezone Selector */
-.tz-sel{font-family:var(--fm);font-size:10px;background:var(--bgH);border:1px solid var(--brd);color:var(--t3);padding:4px 6px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;}
-.tz-sel:focus{outline:none;border-color:var(--acc);}
-.tz-sel option{background:var(--bg2);color:var(--t1);}
+.btn-a{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700;}
+.btn-a:hover{background:#4de058;box-shadow:0 0 14px rgba(62,207,74,.2);}
+.yr-sel{font-family:var(--fm);font-size:12px;font-weight:700;background:var(--bgI);border:1px solid var(--brd);color:var(--acc);padding:4px 8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%233ecf4a'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;}
+.yr-sel:focus{outline:none;border-color:var(--acc);}
+.yr-sel option{background:var(--bg2);color:var(--t1);}
+.turbo-row{display:flex;align-items:center;gap:16px;padding:10px 24px;background:var(--bg1);border-bottom:1px solid var(--brd);}
+.turbo-left{flex:1;display:flex;align-items:center;gap:12px;}
+.turbo-btn{font-family:var(--fm);font-size:14px;font-weight:700;letter-spacing:.06em;padding:12px 28px;border:2px solid var(--brd);background:var(--bg0);color:var(--t3);cursor:default;text-transform:uppercase;position:relative;white-space:nowrap;transition:color .3s,background .3s;}
+.turbo-btn.pre .turbo-gap{font-weight:600;color:var(--t2);}
+.turbo-btn.hit{border-color:var(--acc);color:var(--acc);background:rgba(62,207,74,.06);cursor:pointer;animation:turboPulse 2s ease-in-out infinite;}
+.turbo-btn.active{border-color:var(--orange);color:var(--orange);background:rgba(240,150,10,.06);cursor:pointer;animation:turboBorderPulse 2s ease-in-out infinite;}
+@keyframes turboPulse{0%,100%{box-shadow:0 0 0 rgba(62,207,74,0);}50%{box-shadow:0 0 24px rgba(62,207,74,.2);}}
+@keyframes turboBorderPulse{0%,100%{border-color:var(--orange);box-shadow:0 0 6px rgba(240,150,10,.15);}50%{border-color:rgba(240,150,10,.4);box-shadow:0 0 14px rgba(240,150,10,.25);}}
+.turbo-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.turbo-meta{text-align:center;padding:6px 14px;background:var(--bgI);border:1px solid var(--brd);}
+.turbo-meta .tm-label{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);font-weight:600;margin-bottom:3px;}
+.turbo-meta .tm-val{font-family:var(--fm);font-size:15px;font-weight:600;color:var(--t1);}
+.turbo-meta .tm-val.g{color:var(--acc);}
+.mbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 24px;background:var(--bg1);border-bottom:1px solid var(--brd);}
+.mbar-l{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.mf{display:flex;align-items:center;gap:4px;}
+.ml{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);white-space:nowrap;}
+.mi{font-family:var(--fb);font-size:11px;font-weight:600;background:var(--bgI);border:1px solid var(--brd);color:var(--t1);padding:4px 7px;width:160px;}
+.mi:focus{outline:none;border-color:var(--acc);}
+.mbar-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.minfo{font-family:var(--fm);font-size:9px;color:var(--t3);background:var(--bgI);border:1px solid var(--brd);padding:3px 7px;white-space:nowrap;}
+.minfo b{color:var(--t2);}
+.sbar{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 24px;}
+.sc{background:var(--bg2);border:1px solid var(--brd);padding:10px 12px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--acc);opacity:.2;}
+.sc.hl::before{opacity:1;}
+.sl{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:4px;font-weight:600;}
+.sv{font-family:var(--fm);font-size:16px;font-weight:600;color:var(--t1);position:relative;}
+.sv.g{color:var(--acc);}
+@keyframes pulseUp{0%{transform:translateY(0);opacity:1;}50%{transform:translateY(-6px);opacity:.7;text-shadow:0 0 16px rgba(62,207,74,.5);}100%{transform:translateY(0);opacity:1;text-shadow:none;}}
+.sv.anim,.fv.anim{animation:pulseUp 1.4s ease-out;}
+.mn{padding:0 24px 115px;}
+.bw{position:relative;padding:2px;}
+.bw::before,.bw::after{content:'';position:absolute;width:10px;height:10px;border-color:var(--acc);border-style:solid;opacity:.4;z-index:2;pointer-events:none;}
+.bw::before{top:0;left:0;border-width:2px 0 0 2px;}
+.bw::after{bottom:0;right:0;border-width:0 2px 2px 0;}
+.tc{background:var(--bg2);border:1px solid var(--brd);overflow:hidden;}
+.tbar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--brd);background:var(--bg1);}
+.tt{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t2);}
+.ts{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:1200px;}
+thead th{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding:8px 5px;text-align:left;border-bottom:1px solid var(--brd);background:var(--bg1);white-space:nowrap;position:sticky;top:0;}
+thead th:last-child{text-align:center;width:32px;}
+tbody tr{border-bottom:1px solid #1a1a1a;transition:background .1s;}
+tbody tr:hover{background:var(--bgH);}
+tbody tr.auto-row{background:rgba(62,207,74,.02);}
+tbody tr.confirmed-row{background:rgba(62,207,74,.04);}
+tbody td{padding:2px 3px;vertical-align:middle;}
+tbody td:last-child{text-align:center;}
+.rn{font-family:var(--fm);font-size:8px;color:var(--t3);text-align:center;width:24px;}
+.ci{font-family:var(--fm);font-size:11px;background:transparent;border:1px solid transparent;color:var(--t1);padding:5px 4px;width:100%;transition:all .1s;appearance:none;-webkit-appearance:none;}
+.ci:focus{outline:none;border-color:var(--acc);background:var(--bgI);}
+.ci::placeholder{color:var(--t3);font-style:italic;}
+select.ci{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;padding-right:16px;}
+select.ci option{background:var(--bg2);color:var(--t1);}
+.ci.nm{font-family:var(--fb);font-weight:500;}
+.ci.mo{text-align:right;}
+.ci.cm{text-align:right;color:var(--acc);font-weight:600;cursor:default;}
+.ci.cm.neg{color:var(--red);}
+.ci.cm.turbo{color:var(--orange)!important;}
+.ci.nt{font-family:var(--fb);font-size:10px;color:var(--t2);}
+.ci.locked{opacity:.6;pointer-events:none;background:rgba(255,255,255,.02);}
+.auto-badge{display:inline-block;font-size:7px;font-weight:700;padding:1px 3px;background:rgba(62,207,74,.1);color:var(--acc);border:1px solid rgba(62,207,74,.2);margin-left:3px;vertical-align:middle;text-transform:uppercase;}
+.db{border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;padding:2px 4px;transition:all .12s;font-family:var(--fb);}
+.db:hover{color:var(--red);background:var(--redD);}
+.chk-wrap{display:flex;align-items:center;justify-content:center;padding:3px;}
+.chk{width:16px;height:16px;appearance:none;-webkit-appearance:none;background:var(--bgI);border:2px solid var(--brd);cursor:pointer;position:relative;transition:all .15s;flex-shrink:0;}
+.chk:checked{background:var(--acc);border-color:var(--acc);}
+.chk:checked::after{content:'\2713';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:700;color:#000;line-height:1;}
+.chk:hover{border-color:var(--acc);}
+select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
+.fs{border-top:2px solid var(--accD);background:rgba(62,207,74,.02);padding:12px;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fblk{background:var(--bgI);border:1px solid var(--brd);padding:10px 12px;}
+.fr{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1a1a;}
+.fr:last-child{border-bottom:none;}
+.fr.tr{border-top:2px solid var(--accD);border-bottom:none;padding-top:7px;margin-top:3px;}
+.fl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;}
+.fl.ml2{color:var(--acc);font-size:10px;}
+.fv{font-family:var(--fm);font-size:12px;font-weight:600;color:var(--t1);}
+.fv.g{color:var(--acc);}
+.fv.o{color:var(--orange);}
+.fvi{font-family:var(--fm);font-size:11px;font-weight:500;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:3px 6px;width:120px;text-align:right;}
+.fvi:focus{outline:none;border-color:var(--acc);}
+.fc{font-family:var(--fm);font-size:9px;color:var(--t3);margin-left:4px;}
+.tabs-c{position:fixed;bottom:0;left:0;right:0;background:var(--bg1);border-top:1px solid var(--brd);z-index:100;}
+.tabs-i{max-width:1500px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none;}
+.tabs-i::-webkit-scrollbar{display:none;}
+.tab{flex:1;min-width:68px;padding:11px 4px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);cursor:pointer;border:none;background:transparent;border-top:2px solid transparent;transition:all .2s;font-family:var(--fb);white-space:nowrap;}
+.tab:hover{color:var(--t2);background:rgba(255,255,255,.02);}
+.tab.on{color:var(--acc);border-top-color:var(--acc);background:rgba(62,207,74,.04);}
+.tab .tc2{display:block;font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:1px;}
+.tab.on .tc2{color:var(--accD);}
+@media(max-width:1100px){.sbar{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:700px){.sbar{grid-template-columns:repeat(2,1fr);}.hdr,.mbar,.mn,.turbo-row{padding-left:10px;padding-right:10px;}.sbar{padding:10px;}.turbo-row{flex-wrap:wrap;}}
+@media(max-width:500px){.sbar{grid-template-columns:1fr;}}
+@keyframes fi{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+.fi{animation:fi .15s ease-out;}
 
 /* ─── LOGIN SCREEN ─── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg0);position:fixed;inset:0;z-index:9999;}
-#login-screen.hidden{display:none;}
-.login-box{width:380px;max-width:90vw;background:var(--bg1);border:1px solid var(--brd);padding:0;}
-.login-hdr{padding:24px 28px 16px;text-align:center;border-bottom:1px solid var(--brd2);}
-.login-logo{margin-bottom:12px;}
-.login-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:4px;}
-.login-sub{font-size:11px;color:var(--t4);}
-.login-body{padding:20px 28px;}
-.login-field{margin-bottom:12px;}
-.login-field label{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--t5);margin-bottom:4px;}
-.login-field input{width:100%;font-family:var(--fb);font-size:12px;background:var(--bg2);border:1px solid var(--brd);color:var(--t1);padding:10px 12px;outline:none;transition:border-color .15s;}
-.login-field input:focus{border-color:var(--acc);}
-.login-btn{width:100%;padding:10px;border:1px solid var(--acc);background:var(--acc);color:var(--bg0);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);text-transform:uppercase;letter-spacing:0.04em;transition:all .15s;margin-top:4px;}
-.login-btn:hover{background:#e4ff6a;box-shadow:0 0 14px rgba(211,251,64,.2);}
-.login-btn:disabled{opacity:.5;cursor:default;}
-.login-err{display:none;font-size:11px;color:var(--red);margin-top:8px;padding:6px 8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);}
-.login-msg{display:none;font-size:11px;color:var(--green);margin-top:8px;padding:6px 8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);}
-.login-toggle{text-align:center;padding:14px;border-top:1px solid var(--brd2);font-size:11px;color:var(--t5);cursor:pointer;}
-.login-toggle b{color:var(--acc);cursor:pointer;}
-.login-toggle:hover b{text-decoration:underline;}
-.login-loading{display:none;text-align:center;padding:20px;font-size:12px;color:var(--t4);}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg0);padding:20px;}
+.login-box{width:100%;max-width:380px;background:var(--bg1);border:1px solid var(--brd);padding:36px 32px 32px;}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.login-logo img{height:20px;}
+.login-logo .hdr-d{width:1px;height:16px;background:var(--brd);}
+.login-logo span{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);}
+.login-logo span em{color:var(--acc);font-style:normal;}
+.login-title{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;}
+.login-sub{font-size:11px;color:var(--t3);margin-bottom:22px;}
+.login-label{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:5px;}
+.login-input{width:100%;font-family:var(--fb);font-size:12px;background:var(--bgI);border:1px solid var(--brd);color:var(--t1);padding:9px 11px;margin-bottom:14px;transition:border-color .2s;}
+.login-input:focus{outline:none;border-color:var(--acc);}
+.login-input::placeholder{color:var(--t3);}
+.login-btn{width:100%;font-family:var(--fb);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:10px;border:1px solid var(--acc);background:var(--acc);color:#000;cursor:pointer;transition:all .2s;margin-top:4px;}
+.login-btn:hover{background:#4de058;box-shadow:0 0 14px rgba(62,207,74,.2);}
+.login-btn:disabled{opacity:.5;cursor:wait;}
+.login-toggle{font-family:var(--fb);font-size:10px;color:var(--t3);background:none;border:none;cursor:pointer;margin-top:14px;display:block;width:100%;text-align:center;}
+.login-toggle:hover{color:var(--acc);}
+.login-err{font-size:10px;color:var(--red);background:var(--redD);border:1px solid rgba(224,64,64,.2);padding:7px 10px;margin-bottom:12px;display:none;}
+.login-msg{font-size:10px;color:var(--acc);background:var(--accG);border:1px solid rgba(62,207,74,.2);padding:7px 10px;margin-bottom:12px;display:none;}
+.login-loading{text-align:center;padding:40px 0;color:var(--t3);font-size:11px;}
+.user-bar{display:flex;align-items:center;gap:8px;}
+.user-email{font-family:var(--fm);font-size:9px;color:var(--t3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn-logout{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t3);cursor:pointer;transition:all .2s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);background:var(--redD);}
 
-/* Outcome Indicators */
-.outcome-ind{font-size:9px;margin-left:3px;vertical-align:middle;font-family:var(--fb);}
-.outcome-ind.unmarked{color:var(--red);opacity:.5;}
-.outcome-ind.marked{color:var(--green);opacity:.6;}
+/* ─── ADMIN DASHBOARD ─── */
+.admin-wrap{min-height:100vh;background:var(--bg0);padding:0;}
+.admin-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--brd);background:var(--bg1);position:sticky;top:0;z-index:100;}
+.admin-hdr-l{display:flex;align-items:center;gap:14px;}
+.admin-hdr-l img{height:22px;}
+.admin-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);}
+.admin-title span{color:var(--orange);}
+.admin-hdr-r{display:flex;align-items:center;gap:8px;}
+.admin-body{max-width:900px;margin:0 auto;padding:24px;}
+.admin-section-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;}
+.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.admin-stat{background:var(--bg2);border:1px solid var(--brd);padding:14px 16px;}
+.admin-stat-label{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);font-weight:600;margin-bottom:4px;}
+.admin-stat-val{font-family:var(--fm);font-size:20px;font-weight:600;color:var(--t1);}
+.admin-stat-val.g{color:var(--acc);}
+.admin-user-list{display:flex;flex-direction:column;gap:6px;}
+.admin-user{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--brd);padding:12px 16px;cursor:pointer;transition:all .15s;}
+.admin-user:hover{border-color:var(--acc);background:var(--bgH);}
+.admin-user-left{display:flex;align-items:center;gap:12px;}
+.admin-user-avatar{width:32px;height:32px;background:var(--bgI);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:12px;font-weight:600;color:var(--acc);text-transform:uppercase;}
+.admin-user-info{display:flex;flex-direction:column;gap:2px;}
+.admin-user-email{font-size:12px;font-weight:500;color:var(--t1);}
+.admin-user-meta{font-size:9px;color:var(--t3);}
+.admin-user-meta span{color:var(--acc);}
+.admin-user-right{display:flex;align-items:center;gap:10px;}
+.admin-badge{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;background:rgba(240,150,10,.1);color:var(--orange);border:1px solid rgba(240,150,10,.2);}
+.admin-badge.rep{background:var(--accG);color:var(--acc);border-color:rgba(62,207,74,.2);}
+.admin-toggle-btn{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t3);cursor:pointer;transition:all .2s;}
+.admin-toggle-btn:hover{border-color:var(--orange);color:var(--orange);}
+.admin-view-btn{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t2);cursor:pointer;transition:all .2s;}
+.admin-view-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--accG);}
+.viewing-banner{display:none;align-items:center;justify-content:space-between;padding:8px 24px;background:rgba(240,150,10,.08);border-bottom:1px solid rgba(240,150,10,.2);}
+.viewing-banner.show{display:flex;}
+.viewing-text{font-size:10px;font-weight:600;color:var(--orange);letter-spacing:.04em;}
+.viewing-text b{color:var(--t1);}
+.btn-back{font-family:var(--fb);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(240,150,10,.3);background:rgba(240,150,10,.08);color:var(--orange);cursor:pointer;transition:all .2s;}
+.btn-back:hover{background:rgba(240,150,10,.15);border-color:var(--orange);}
+@media(max-width:700px){.admin-stats{grid-template-columns:1fr;}.admin-body{padding:16px;}.admin-user{flex-wrap:wrap;gap:8px;}}
 </style>
 </head>
 <body>
 
-<!-- ═══ LOGIN SCREEN ═══ -->
-<div id="login-screen">
+<!-- ─── LOGIN SCREEN ─── -->
+<div id="login-screen" class="login-wrap">
   <div class="login-box">
-    <div class="login-hdr">
-      <div class="login-logo">
-        <svg width="36" height="36" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
-      </div>
-      <div class="login-title" id="loginTitle">Sign In</div>
-      <div class="login-sub" id="loginSub">Enter your credentials to access the calendar.</div>
+    <div class="login-logo">
+      <img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA">
+      <div class="hdr-d"></div>
+      <span>Commission <em>Tracker</em></span>
     </div>
-    <div class="login-body" id="loginForm">
-      <div class="login-field">
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="you@dealershipaccelerator.io" autocomplete="email">
-      </div>
-      <div class="login-field">
-        <label>Password</label>
-        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
-      </div>
+    <div class="login-title" id="loginTitle">Sign In</div>
+    <div class="login-sub" id="loginSub">Enter your credentials to access your tracker.</div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-msg" id="loginMsg"></div>
+    <div id="loginForm">
+      <label class="login-label">Email</label>
+      <input type="email" class="login-input" id="loginEmail" placeholder="you@dealershipaccelerator.io" autocomplete="email">
+      <label class="login-label">Password</label>
+      <input type="password" class="login-input" id="loginPass" placeholder="••••••••" autocomplete="current-password">
       <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
-      <div class="login-err" id="loginErr"></div>
-      <div class="login-msg" id="loginMsg"></div>
+      <button class="login-toggle" id="loginToggle" onclick="toggleSignup()">Don't have an account? <b>Sign Up</b></button>
     </div>
-    <div class="login-loading" id="loginLoading">Loading your calendar...</div>
-    <div class="login-toggle" id="loginToggle" onclick="toggleSignup()">Don't have an account? <b>Sign Up</b></div>
+    <div class="login-loading" id="loginLoading" style="display:none">Loading your data...</div>
   </div>
 </div>
 
-<!-- ═══ APP (hidden until authenticated) ═══ -->
+<!-- ─── ADMIN DASHBOARD (hidden until admin auth) ─── -->
+<div id="admin-screen" style="display:none" class="admin-wrap">
+  <div class="admin-hdr">
+    <div class="admin-hdr-l">
+      <a href="index.html" style="display:flex;align-items:center;text-decoration:none"><img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA"></a>
+      <div class="hdr-d"></div>
+      <div class="admin-title">Admin <span>Dashboard</span></div>
+    </div>
+    <div class="admin-hdr-r">
+      <a href="index.html" class="btn-logout" style="border-color:var(--brd);color:var(--t2);text-decoration:none;display:inline-block">🏠 Home</a>
+      <span class="user-email" id="adminEmail"></span>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-stats">
+      <div class="admin-stat"><div class="admin-stat-label">Total Users</div><div class="admin-stat-val" id="adStatUsers">0</div></div>
+      <div class="admin-stat"><div class="admin-stat-label">Admins</div><div class="admin-stat-val" id="adStatAdmins">0</div></div>
+      <div class="admin-stat"><div class="admin-stat-label">Reps</div><div class="admin-stat-val g" id="adStatReps">0</div></div>
+    </div>
+    <div class="admin-section-title">All Users</div>
+    <div class="admin-user-list" id="adminUserList"></div>
+  </div>
+</div>
+
+<!-- ─── APP (hidden until auth) ─── -->
 <div id="app" style="display:none">
 
-<!-- ═══ HEADER ═══ -->
+<div class="viewing-banner" id="viewingBanner">
+  <div class="viewing-text">Viewing tracker for <b id="viewingName">—</b></div>
+  <button class="btn-back" onclick="backToAdmin()">&#8592; Back to Dashboard</button>
+</div>
+
 <div class="hdr">
   <div class="hdr-l">
-    <a href="index.html" style="display:flex;align-items:center;text-decoration:none;cursor:pointer" title="Back to Home">
-      <svg width="26" height="26" viewBox="0 0 180 220" fill="none"><path d="M178.59,103.09l-.38,108.7h-31.39s.34-95.94.34-95.94c.02-6.15-7.78-8.51-11.11-3.34l-63.97,99.26h-36.28s81.85-127.03,81.85-127.03c18.24-28.31,61.05-15.42,60.93,18.35Z" fill="#D3FB40"/><path d="M133.63,173.61c.03-9.49-12-13.11-17.13-5.16l-27.92,43.33h44.92s.14-38.18.14-38.18Z" fill="#D3FB40"/></svg>
-      <span class="hdr-brand" style="margin-left:12px">DEALERSHIP ACCELERATOR</span>
-    </a>
-    <div class="hdr-div"></div>
-    <span class="hdr-sub">Calendar</span>
+    <a href="index.html" style="display:flex;align-items:center;text-decoration:none"><img src="https://cdn.prod.website-files.com/685964b550c1025520bbb19c/685964b550c1025520bbb1af_logo.svg" alt="DA"></a>
+    <div class="hdr-d"></div>
+    <div class="hdr-t">Commission <span>Tracker</span></div>
+    <div class="hdr-d"></div>
+    <select class="yr-sel" id="yrSel" onchange="switchYear(+this.value)"></select>
   </div>
   <div class="hdr-r">
-    <a href="index.html" class="btn" title="Home">🏠 Home</a>
-    <div class="hdr-div"></div>
-    <div class="view-tog">
-      <button class="view-btn" data-view="month" onclick="setView('month')">Month</button>
-      <button class="view-btn on" data-view="week" onclick="setView('week')">Week</button>
-      <button class="view-btn" data-view="day" onclick="setView('day')">Day</button>
+    <div class="user-bar">
+      <a href="index.html" class="btn-logout" style="border-color:var(--brd);color:var(--t2);text-decoration:none;display:inline-block">🏠 Home</a>
+      <span class="user-email" id="userEmail"></span>
+      <button class="btn" id="btnDashboard" style="display:none" onclick="backToAdmin()">Dashboard</button>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
     </div>
-    <div class="hdr-div"></div>
-    <button class="btn btn-filter on" id="filterToggle" onclick="toggleSidebar()">☰ Filters</button>
-    <button class="btn" id="btnTeam" onclick="openTeamModal()" style="display:none">👥 Team</button>
-    <button class="btn" onclick="tryOpenEod()" style="background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3);color:var(--orange)">📋 EOD Report</button>
-    <div class="hdr-div"></div>
-    <span style="font-size:10px;color:var(--t5);font-family:var(--fm)" id="userEmail"></span>
-    <button class="btn" onclick="doLogout()">Logout</button>
+    <button class="btn" onclick="clearTab()">Clear Tab</button>
+    <button class="btn" onclick="doExport()">Export CSV</button>
+    <button class="btn-a btn" onclick="addRow()">+ Add Row</button>
   </div>
 </div>
 
-<!-- ═══ NAV BAR ═══ -->
-<div class="nav">
-  <div class="nav-l">
-    <button class="btn" onclick="navigate(-1)">◀</button>
-    <button class="btn" style="color:var(--acc);border-color:rgba(211,251,64,.2)" onclick="goToday()">Today</button>
-    <button class="btn" onclick="navigate(1)">▶</button>
+<div class="turbo-row">
+  <div class="turbo-left">
+    <div class="turbo-btn pre" id="turboBtn" onclick="onTurboClick()">
+      <span id="turboText">$100,000 until Turbo Deal</span>
+    </div>
   </div>
-  <div class="nav-title" id="navTitle"></div>
-  <div class="nav-r">
-    <select class="tz-sel" id="tzSelect" onchange="setTimezone(this.value)" title="Timezone">
-      <option value="America/Los_Angeles">Pacific</option>
-      <option value="America/Denver">Mountain</option>
-      <option value="America/Chicago">Central</option>
-      <option value="America/New_York">Eastern</option>
-      <option value="America/Phoenix">Arizona</option>
-      <option value="America/Anchorage">Alaska</option>
-      <option value="Pacific/Honolulu">Hawaii</option>
-      <option value="UTC">UTC</option>
-    </select>
-    <span class="ev-count" id="syncStatus" style="cursor:pointer" onclick="manualSync()" title="Click to sync from Google Calendar">📅 Sync</span>
-    <span class="ev-count" id="evCount"></span>
-    <button class="btn btn-acc" onclick="openNewEvent()">+ New Event</button>
+  <div class="turbo-right">
+    <div class="turbo-meta"><div class="tm-label">Recognized New Cash MTD</div><div class="tm-val g" id="mtdNewCash">$0.00</div></div>
+    <div class="turbo-meta"><div class="tm-label">Total Revenue MTD</div><div class="tm-val" id="mtdRevenue">$0.00</div></div>
+    <div class="turbo-meta"><div class="tm-label">Turbo Additional MTD</div><div class="tm-val" id="mtdTurbo" style="color:var(--orange)">$0.00</div></div>
+    <div class="turbo-meta"><div class="tm-label">Total Commissions MTD</div><div class="tm-val g" id="mtdComm">$0.00</div></div>
   </div>
 </div>
 
-<!-- ═══ BODY ═══ -->
-<div class="body-wrap">
-  <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
-    <div style="margin-bottom:20px">
-      <div class="side-label">Filter by Team</div>
-      <div id="teamFilters"></div>
-      <button class="clear-btn" id="clearTeamFilter" style="display:none" onclick="clearTeamFilter()">Clear team filter</button>
-    </div>
-    <div>
-      <div class="side-label">Filter by Type</div>
-      <div id="typeFilters"></div>
-      <button class="clear-btn" id="clearTypeFilter" style="display:none" onclick="clearTypeFilter()">Clear type filter</button>
-    </div>
-    <div class="stats-box" id="statsBox"></div>
+<div class="mbar">
+  <div class="mbar-l">
+    <div class="mf"><span class="ml">Name:</span><input type="text" class="mi" id="repName" placeholder="Rep name..." oninput="onMeta(this.value)"></div>
   </div>
-
-  <!-- MAIN CALENDAR -->
-  <div class="cal-main" id="calMain"></div>
+  <div class="mbar-r">
+    <div class="minfo"><b>Period:</b> <span id="xPer"></span></div>
+    <div class="minfo"><b>Submitted:</b> <span id="xSub"></span></div>
+    <div class="minfo"><b>Comm Due:</b> <span id="xDue"></span></div>
+  </div>
 </div>
 
-<!-- ═══ MODAL CONTAINER ═══ -->
-<div id="modalContainer"></div>
+<div class="sbar">
+  <div class="sc"><div class="sl">Entries</div><div class="sv" id="s0">0</div></div>
+  <div class="sc hl"><div class="sl">Recognized New Cash</div><div class="sv g" id="s1">$0.00</div></div>
+  <div class="sc"><div class="sl">Unrecognized New Cash</div><div class="sv" id="s2">$0.00</div></div>
+  <div class="sc"><div class="sl">Total Revenue Recognized</div><div class="sv" id="s3">$0.00</div></div>
+  <div class="sc hl"><div class="sl">Total Commission</div><div class="sv g" id="s4">$0.00</div></div>
+  <div class="sc"><div class="sl">Turbo Additional</div><div class="sv" id="s5" style="color:var(--orange)">$0.00</div></div>
+</div>
+
+<div class="mn"><div class="bw"><div class="tc">
+  <div class="tbar">
+    <div class="tt" id="tTitle">1-15 Jan 2026</div>
+    <div style="font-family:var(--fm);font-size:9px;color:var(--t3);"><span id="rCnt">0</span> rows</div>
+  </div>
+  <div class="ts"><table>
+    <thead><tr>
+      <th style="width:24px">#</th><th style="min-width:150px">Set or Sale</th>
+      <th style="min-width:165px">Dealership Name</th><th style="min-width:110px">Date</th>
+      <th style="min-width:105px">Program Value</th><th style="min-width:115px">Cash Collected</th>
+      <th style="min-width:82px">Comms %</th><th style="min-width:135px">Agreement Term</th>
+      <th style="min-width:115px">Commission</th><th style="width:44px;text-align:center">Paid</th>
+      <th style="min-width:140px">Notes</th><th></th>
+    </tr></thead>
+    <tbody id="tbd"></tbody>
+  </table></div>
+  <div class="fs"><div class="fg">
+    <div class="fblk">
+      <div class="fr"><span class="fl">Total Commission</span><span class="fv g" id="f0">$0.00</span></div>
+      <div class="fr"><span class="fl">Turbo Additional</span><span class="fv o" id="f1t">$0.00</span></div>
+      <div class="fr"><span class="fl">Draw Adjustments</span><input type="text" class="fvi" id="f2" placeholder="$0.00" oninput="calcF()" onblur="fmtFI(this)"></div>
+      <div class="fr tr"><span class="fl ml2">Total Payable</span><span><span class="fv g" id="f3">$0.00</span><span class="fc">USD</span></span></div>
+    </div>
+    <div class="fblk">
+      <div class="fr"><span class="fl">Total Revenue Recognized</span><span class="fv" id="f4">$0.00</span></div>
+      <div class="fr"><span class="fl">Recognized New Cash</span><span class="fv g" id="f5">$0.00</span></div>
+      <div class="fr"><span class="fl">Unrecognized New Cash</span><span class="fv" id="f6">$0.00</span></div>
+    </div>
+  </div></div>
+</div></div></div>
+
+<div class="tabs-c"><div class="tabs-i" id="tabs"></div></div>
 
 </div><!-- /app -->
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   DEALERSHIP ACCELERATOR — CALENDAR SYSTEM V2
-   Single-file HTML · Supabase persistence + auth
-   ═══════════════════════════════════════════════════════════════ */
+// ─── AUDIO ───
+let audioCtx=null;
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCoinChime(){try{const ctx=getAudio();[0,.08].forEach((dl,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(i?2400:1800,ctx.currentTime+dl);g.gain.setValueAtTime(.12,ctx.currentTime+dl);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dl+.15);o.start(ctx.currentTime+dl);o.stop(ctx.currentTime+dl+.15);});}catch(e){}}
+function playTurboChime(){try{const ctx=getAudio();[800,1000,1200,1600,2000].forEach((f,i)=>{const dl=i*.07,o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='triangle';o.frequency.setValueAtTime(f,ctx.currentTime+dl);g.gain.setValueAtTime(.1,ctx.currentTime+dl);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dl+.2);o.start(ctx.currentTime+dl);o.stop(ctx.currentTime+dl+.2);});}catch(e){}}
+function playTickSound(){try{const ctx=getAudio(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(1200,ctx.currentTime);g.gain.setValueAtTime(.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.03);o.start(ctx.currentTime);o.stop(ctx.currentTime+.04);}catch(e){}}
 
-// ─── SUPABASE CLIENT ───
+// ─── COUNTER ANIM ───
+let _af={};
+function animC(elId,from,to,snd){
+  if(_af[elId])cancelAnimationFrame(_af[elId]);
+  const el=document.getElementById(elId);const dur=1400,st=performance.now(),diff=to-from;let lt=0;
+  el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');
+  function step(now){const p=Math.min((now-st)/dur,1);const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;const c=from+diff*e;el.textContent=cur(c);if(snd&&Math.abs(c-lt)>25){playTickSound();lt=c;}if(p<1){_af[elId]=requestAnimationFrame(step);}else{el.textContent=cur(to);delete _af[elId];}}
+  _af[elId]=requestAnimationFrame(step);
+}
+
+// ─── CONFIG ───
+const TURBO_THRESHOLD=100000;const TURBO_RATE=0.14;
+const YEARS=[2026,2027,2028,2029,2030];
+const TYPES=['','CLOSED SET (SDR)','NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2','SPLIT PAY 2/2','UPSELL','RECURRING PAYMENT','RENEWAL','REFUND'];
+const PROGS=['','11,098','14,982','26,635'];
+const CMS=['','3.00%','4.00%','10.00%','14.00%'];
+const TRMS=['','4 Month','6 Month','12 Month','Custom (Needs Approval)'];
+const EXCL_NEW_CASH=new Set(['REFUND','SPLIT PAY 2/2','RECURRING PAYMENT','RENEWAL']);
+const TURBO_AUTO_TYPES=new Set(['NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2']);
+const MO_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MO_KEYS=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+const TID_PFX=['j','f','m','a','y','n','l','g','s','o','v','d'];
+
+// ─── DYNAMIC TAB GENERATION ───
+function lastDay(y,m){return new Date(y,m+1,0).getDate();}
+function genTD(yr){
+  const tabs=[];
+  for(let m=0;m<12;m++){
+    const ld=lastDay(yr,m);const mn=MO_NAMES[m];const mk=MO_KEYS[m];const px=TID_PFX[m];
+    tabs.push({id:px+'1',l:'1-15 '+mn.slice(0,3),p:mn+' '+yr,
+      s:mn+' 15, '+yr,d:mn+' 22, '+yr,ms:m,d1:1,d2:15,mo:mk,yr:yr});
+    tabs.push({id:px+'2',l:'16-'+ld+' '+mn.slice(0,3),p:mn+' '+yr,
+      s:mn+' '+ld+', '+yr,d:(m<11?MO_NAMES[m+1]+' 8, '+yr:'January 8, '+(yr+1)),
+      ms:m,d1:16,d2:ld,mo:mk,yr:yr});
+  }
+  return tabs;
+}
+
+let ALL_TD={};
+YEARS.forEach(y=>{ALL_TD[y]=genTD(y);});
+
+let AY=2026;let AT='j1';let S={};
+// turboActivated: { "2026_jan": { active: bool, crossing: { tabId, rowId, overage, cumulAtCross, timestamp } | null } }
+let turboActivated={};
+let _uid=Date.now();let _prev={s1:0,s4:0,f0:0};let _skipCalc=false;
+
+function nid(){return 'r'+(++_uid);}
+function br(){return{id:nid(),tp:'',dl:'',dt:'',pg:'',ca:'',cm:'',tm:'',nt:'',src:'',auto:false,paid:false};}
+function TD(){return ALL_TD[AY];}
+function TS(){return S[AY];}
+
+function switchYear(yr){AY=yr;AT=TD()[0].id;ensureYear(yr);document.getElementById('yrSel').value=yr;rTabs();rAll();}
+
+function ensureYear(yr){
+  if(!S[yr]){S[yr]={};ALL_TD[yr].forEach(t=>{S[yr][t.id]={rows:[],rn:'',dr:''};});}
+  ALL_TD[yr].forEach(t=>{
+    if(!S[yr][t.id])S[yr][t.id]={rows:[],rn:'',dr:''};
+    if(S[yr][t.id].rows.length===0)for(let i=0;i<10;i++)S[yr][t.id].rows.push(br());
+    S[yr][t.id].rows.forEach(r=>{if(!r.id)r.id=nid();if(r.paid===undefined)r.paid=false;});
+  });
+}
+
+function dateToTabGlobal(ds){
+  if(!ds)return null;
+  const p=ds.split('-');const y=+p[0],m=+p[1]-1,d=+p[2];
+  if(y<YEARS[0]||y>YEARS[YEARS.length-1])return null;
+  if(!ALL_TD[y])return null;
+  for(const t of ALL_TD[y]){if(t.ms===m&&d>=t.d1&&d<=t.d2)return{yr:y,tid:t.id};}
+  return null;
+}
+function addDays(ds,days){const dt=new Date(ds+'T12:00:00');dt.setDate(dt.getDate()+days);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function termMo(tm){if(tm==='4 Month')return 4;if(tm==='6 Month')return 6;if(tm==='12 Month')return 12;return 0;}
+function getMonthTabs(){const mo=TD().find(t=>t.id===AT)?.mo;return TD().filter(t=>t.mo===mo).map(t=>t.id);}
+function getCurrentMo(){return TD().find(t=>t.id===AT)?.mo;}
+function turboKey(){return AY+'_'+getCurrentMo();}
+
+function getTabData(yr,tid){ensureYear(yr);return S[yr][tid];}
+
+// ─── LINKED ENTRIES (CROSS-YEAR) ───
+function clearLinked(srcId){
+  YEARS.forEach(yr=>{
+    if(!S[yr])return;
+    Object.keys(S[yr]).forEach(tid=>{
+      S[yr][tid].rows=S[yr][tid].rows.filter(r=>r.src!==srcId);
+    });
+  });
+}
+function genLinked(row,tabId){
+  if(!row.dt)return;
+  const tab=TD().find(t=>t.id===tabId);
+  if(row.tp==='SPLIT PAY 1/2'){
+    const fd=addDays(row.dt,30),loc=dateToTabGlobal(fd);
+    if(loc){
+      ensureYear(loc.yr);
+      S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'SPLIT PAY 2/2',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:'Auto \u2014 Split 2/2 from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
+    }
+  } else if(row.tp==='NEW SALE (MONTHLY)'){
+    const mo=termMo(row.tm);if(mo<2)return;
+    for(let i=1;i<mo;i++){
+      const fd=addDays(row.dt,30*i),loc=dateToTabGlobal(fd);
+      if(loc){
+        ensureYear(loc.yr);
+        S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'RECURRING PAYMENT',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:'Auto \u2014 Recurring '+(i+1)+'/'+mo+' from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
+      }
+    }
+  }
+}
+function syncLinked(row,tabId){clearLinked(row.id);genLinked(row,tabId);}
+
+// ─── MTD ───
+function calcMTD(){
+  const moTabs=getMonthTabs();let recNew=0,revRec=0;
+  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;const ca=pm(r.ca);revRec+=ca;if(!EXCL_NEW_CASH.has(r.tp))recNew+=ca;});});
+  return{recNew,revRec};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TURBO SYSTEM V2 — Threshold-aware, toggle on/off, partial split
+// ═══════════════════════════════════════════════════════════════
+
+// Detect which row crosses the $100k threshold (if any)
+// Scans all paid new-cash rows in the month in display order
+function detectThresholdCrossing(){
+  const tk=turboKey();const moTabs=getMonthTabs();
+  let cumul=0,crossingInfo=null;
+  for(const tid of moTabs){
+    const rows=TS()[tid]?.rows||[];
+    for(const r of rows){
+      if(!r.paid)continue;
+      if(EXCL_NEW_CASH.has(r.tp))continue;
+      const ca=pm(r.ca);const prev=cumul;cumul+=ca;
+      if(prev<TURBO_THRESHOLD&&cumul>=TURBO_THRESHOLD){
+        const existing=turboActivated[tk]?.crossing;
+        crossingInfo={tabId:tid,rowId:r.id,overage:cumul-TURBO_THRESHOLD,cumulAtCross:cumul,
+          timestamp:(existing?.rowId===r.id)?existing.timestamp:new Date().toISOString()};
+        break;
+      }
+    }
+    if(crossingInfo)break;
+  }
+  if(!turboActivated[tk])turboActivated[tk]={active:false,crossing:null};
+  if(crossingInfo){
+    turboActivated[tk].crossing=crossingInfo;
+  } else {
+    turboActivated[tk].crossing=null;
+    if(turboActivated[tk].active){turboActivated[tk].active=false;resetTurboComms();}
+  }
+  svTurbo();
+}
+
+// Migrate old turbo format (boolean) to new format ({active, crossing})
+// and detect threshold crossings for all active months
+function migrateTurboFormat(){
+  const keys=Object.keys(turboActivated);
+  let needsMigration=false;
+  keys.forEach(tk=>{
+    const val=turboActivated[tk];
+    if(typeof val==='boolean'){
+      turboActivated[tk]={active:val,crossing:null};
+      needsMigration=true;
+    } else if(val&&typeof val==='object'&&val.active===undefined){
+      turboActivated[tk]={active:false,crossing:null};
+      needsMigration=true;
+    }
+  });
+  // Detect threshold crossings for all active turbo months
+  const savedAY=AY,savedAT=AT;
+  Object.keys(turboActivated).forEach(tk=>{
+    const ti=turboActivated[tk];
+    if(!ti?.active)return;
+    const parts=tk.split('_');
+    const yr=parseInt(parts[0]);const moKey=parts[1];
+    if(!yr||!moKey)return;
+    const allTabs=ALL_TD[yr]||[];
+    const monthTab=allTabs.find(t=>t.mo===moKey);
+    if(!monthTab)return;
+    AY=yr;AT=monthTab.id;
+    ensureYear(yr);
+    detectThresholdCrossing();
+    if(turboActivated[tk]?.active&&turboActivated[tk]?.crossing)applyTurboRates();
+  });
+  AY=savedAY;AT=savedAT;
+  if(needsMigration||Object.keys(turboActivated).some(tk=>turboActivated[tk]?.active))svTurbo();
+}
+
+// Apply 14% to all applicable rows AFTER the crossing row
+// The crossing row itself stays at 10% (overage bonus added separately in calc)
+function applyTurboRates(){
+  const tk=turboKey();const ti=turboActivated[tk];
+  if(!ti?.active||!ti?.crossing)return;
+  const moTabs=getMonthTabs();let pastCrossing=false;
+  for(const tid of moTabs){
+    const rows=TS()[tid]?.rows||[];
+    for(const r of rows){
+      if(r.id===ti.crossing.rowId){
+        if(TURBO_AUTO_TYPES.has(r.tp))r.cm='10.00%';
+        pastCrossing=true;continue;
+      }
+      if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp)&&r.paid)r.cm='14.00%';
+    }
+  }
+}
+
+// Revert all 14% turbo rates back to 10%
+function resetTurboComms(){
+  const moTabs=getMonthTabs();
+  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{
+    if(TURBO_AUTO_TYPES.has(r.tp)&&r.cm==='14.00%')r.cm='10.00%';
+  });});
+}
+
+// Turbo additional: informational display of the extra 4% earned
+// This is NOT added to Total Commission (already baked into row commissions)
+function calcTabTurbo(){
+  const tk=turboKey();const ti=turboActivated[tk];
+  if(!ti?.active||!ti?.crossing)return 0;
+  const rows=TS()[AT].rows;let extra=0,pastCrossing=false;
+  const crossHere=ti.crossing.tabId===AT;
+  if(!crossHere){const mt=getMonthTabs();if(mt.indexOf(AT)>mt.indexOf(ti.crossing.tabId))pastCrossing=true;else return 0;}
+  rows.forEach(r=>{if(!r.paid)return;
+    if(crossHere&&r.id===ti.crossing.rowId){if(TURBO_AUTO_TYPES.has(r.tp))extra+=(ti.crossing.overage||0)*0.04;pastCrossing=true;return;}
+    if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp))extra+=pm(r.ca)*0.04;
+  });
+  return extra;
+}
+
+function calcMTDTurbo(){
+  const tk=turboKey();const ti=turboActivated[tk];
+  if(!ti?.active||!ti?.crossing)return 0;
+  const moTabs=getMonthTabs();let extra=0,pastCrossing=false;
+  for(const tid of moTabs){(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;
+    if(r.id===ti.crossing.rowId){if(TURBO_AUTO_TYPES.has(r.tp))extra+=(ti.crossing.overage||0)*0.04;pastCrossing=true;return;}
+    if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp))extra+=pm(r.ca)*0.04;
+  });}
+  return extra;
+}
+
+function calcMTDCommissions(){
+  const moTabs=getMonthTabs();const tk=turboKey();const ti=turboActivated[tk];let bc=0;
+  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);
+    let comm=r.tp==='REFUND'?-(ca*co):(ca*co);
+    if(ti?.active&&ti?.crossing?.rowId===r.id&&r.tp!=='REFUND')comm+=(ti.crossing.overage||0)*0.04;
+    bc+=comm;});});
+  return bc;
+}
+
+function isTurboActive(){const v=turboActivated[turboKey()];if(typeof v==='boolean')return false;return v?.active===true&&!!v?.crossing;}
+
+function updateTurboState(){
+  const mtd=calcMTD();const tk=turboKey();
+  const btn=document.getElementById('turboBtn'),txt=document.getElementById('turboText');
+  const gap=TURBO_THRESHOLD-mtd.recNew;
+  // Normalize old boolean format
+  if(typeof turboActivated[tk]==='boolean')turboActivated[tk]={active:turboActivated[tk],crossing:null};
+  const ti=turboActivated[tk]||{};
+  document.getElementById('mtdNewCash').textContent=cur(mtd.recNew);
+  document.getElementById('mtdRevenue').textContent=cur(mtd.revRec);
+  document.getElementById('mtdTurbo').textContent=cur(calcMTDTurbo());
+  document.getElementById('mtdComm').textContent=cur(calcMTDCommissions());
+  if(mtd.recNew>=TURBO_THRESHOLD){
+    if(ti.active){btn.className='turbo-btn active';txt.innerHTML='\u26A1 TURBO DEAL ACTIVE <span style="font-size:9px;opacity:.5;margin-left:6px;font-weight:400">(click to undo)</span>';}
+    else{btn.className='turbo-btn hit';txt.textContent='\u26A1 TURBO DEAL UNLOCKED';}
+  } else {
+    if(ti.active){ti.active=false;ti.crossing=null;turboActivated[tk]=ti;resetTurboComms();}
+    btn.className='turbo-btn pre';txt.innerHTML='<span class="turbo-gap">'+cur(gap)+'</span> until Turbo Deal';
+  }
+  svTurbo();
+}
+
+function onTurboClick(){
+  const tk=turboKey();const mtd=calcMTD();
+  if(mtd.recNew<TURBO_THRESHOLD)return;
+  // Ensure new format (handles old boolean format too)
+  if(!turboActivated[tk]||typeof turboActivated[tk]==='boolean'){
+    turboActivated[tk]={active:!!turboActivated[tk],crossing:null};
+  }
+  const ti=turboActivated[tk];
+  if(ti.active){
+    // UNDO — deactivate turbo, revert all to 10%
+    ti.active=false;ti.crossing=null;resetTurboComms();svTurbo();
+    calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
+  } else {
+    // ACTIVATE — detect crossing, apply 14% to post-crossing rows
+    ti.active=true;detectThresholdCrossing();applyTurboRates();playTurboChime();svTurbo();
+    calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
+  }
+}
+
+// Quick calc for animation (includes overage bonus)
+function cqk(){
+  const rows=TS()[AT].rows;const tk=turboKey();const ti=turboActivated[tk];let rn=0,bc=0;
+  rows.forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);
+    let comm=r.tp==='REFUND'?-(ca*co):(ca*co);
+    if(ti?.active&&ti?.crossing?.rowId===r.id&&r.tp!=='REFUND')comm+=(ti.crossing.overage||0)*0.04;
+    if(!EXCL_NEW_CASH.has(r.tp))rn+=ca;bc+=comm;});
+  return{rn,bc,te:calcTabTurbo()};
+}
+
+// ─── SUPABASE ───
 const _sb = window.supabase.createClient(
   'https://ygoorvnvwvdygqprkxyf.supabase.co',
   'sb_publishable_kpKWMM2uJgrGSqS_W1CKLQ_uufpskfq'
 );
 let _currentUser = null;
 let _isAdmin = false;
-let _calendarRole = 'Closer';
+let _viewingUserId = null;
+let _viewingUserEmail = null;
 
 // ─── AUTH ───
 let _isSignup = false;
@@ -421,8 +668,8 @@ function toggleSignup(){
   _isSignup = !_isSignup;
   document.getElementById('loginTitle').textContent = _isSignup ? 'Create Account' : 'Sign In';
   document.getElementById('loginSub').textContent = _isSignup
-    ? 'Sign up to access the DA Calendar.'
-    : 'Enter your credentials to access the calendar.';
+    ? 'Sign up to start tracking your commissions.'
+    : 'Enter your credentials to access your tracker.';
   document.getElementById('loginBtn').textContent = _isSignup ? 'Create Account' : 'Sign In';
   document.getElementById('loginToggle').innerHTML = _isSignup
     ? 'Already have an account? <b>Sign In</b>'
@@ -473,6 +720,12 @@ async function doLogin(){
   btn.textContent = _isSignup ? 'Create Account' : 'Sign In';
 }
 
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  document.getElementById('loginEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+  checkSession();
+});
+
 async function checkSession(){
   const { data:{ session } } = await _sb.auth.getSession();
   if(session?.user){
@@ -483,1979 +736,292 @@ async function checkSession(){
   }
 }
 
+async function checkAdmin(){
+  const { data } = await _sb.from('profiles').select('is_admin').eq('id', _currentUser.id).single();
+  _isAdmin = data?.is_admin === true;
+}
+
 async function enterApp(){
-  // Fetch profile for role info
-  const { data: profile } = await _sb.from('profiles').select('is_admin, calendar_role').eq('id', _currentUser.id).single();
-  _isAdmin = profile?.is_admin === true;
-  _calendarRole = profile?.calendar_role || 'Closer';
-
+  await checkAdmin();
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('userEmail').textContent = _currentUser.email;
-  document.getElementById('app').style.display = 'block';
-
-  // Show admin-only buttons
   if(_isAdmin){
-    document.getElementById('btnTeam').style.display='';
+    document.getElementById('adminEmail').textContent = _currentUser.email;
+    document.getElementById('admin-screen').style.display = 'block';
+    await loadAdminDashboard();
+  } else {
+    document.getElementById('userEmail').textContent = _currentUser.email;
+    _viewingUserId = null;
+    await loadFromSupabase(_currentUser.id);
+    document.getElementById('app').style.display = 'block';
+    init();
   }
-
-  await loadState();
-  await checkGcalConnection();
-
-  // Start GCal import sync (pulls events from all connected team members' calendars)
-  startGcalSync();
-  loadTimezone();
-
-  // Default: filter to only show your own events
-  state.filterUsers = [_currentUser.id];
-
-  // Check if returning from Google OAuth
-  const urlParams = new URLSearchParams(window.location.search);
-  if(urlParams.get('gcal') === 'connected'){
-    _gcalConnected = true;
-    // Clean up URL
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-
-  render();
 }
 
 async function doLogout(){
   await _sb.auth.signOut();
-  _currentUser = null;
-  _isAdmin = false;
-  // Redirect to welcome hub
+  _currentUser = null;_isAdmin = false;_viewingUserId = null;
   window.location.href = 'index.html';
+  document.getElementById('loginMsg').style.display = 'none';
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('loginPass')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-  document.getElementById('loginEmail')?.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
-  checkSession();
-});
-
-// ─── DATA ───
-const EVENT_TYPES = [
-  {id:"demo",label:"Demo Call",color:"#3b82f6",icon:"📞",dur:30},
-  {id:"led",label:"LED Review Call",color:"#a855f7",icon:"📊",dur:45},
-  {id:"sync",label:"Sync Call",color:"#06b6d4",icon:"🔄",dur:30},
-  {id:"setup",label:"Setup Call",color:"#22c55e",icon:"⚙️",dur:60},
-  {id:"mgr-training",label:"Manager Training",color:"#f97316",icon:"🎯",dur:45},
-  {id:"team-training",label:"Sales Team Training",color:"#eab308",icon:"👥",dur:45},
-  {id:"launch",label:"Launch Call",color:"#D3FB40",icon:"🚀",dur:45},
-  {id:"1wk-checkin",label:"One Week Check In",color:"#ec4899",icon:"✓",dur:45},
-  {id:"3wk-checkin",label:"Three Week Check In",color:"#8b5cf6",icon:"✓✓",dur:45},
-  {id:"1on1",label:"One on One Meeting",color:"#64748b",icon:"🤝",dur:45},
-];
-// Calculate end time from start + duration
-function calcEndTime(startTime,typeId){
-  if(!startTime)return"";
-  const t=EVENT_TYPES.find(x=>x.id===typeId);if(!t)return"";
-  const[h,m]=startTime.split(":").map(Number);
-  const total=h*60+m+t.dur;
-  return fmtTime(Math.floor(total/60)%24,total%60);
-}
-const ROLES = ["Admin","Closer","Setter","AM"];
-const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const DAYS_FULL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const HOURS = Array.from({length:24},(_,i)=>i);
-const TEAM_COLORS = ["#D3FB40","#3b82f6","#a855f7","#22c55e","#f97316","#ec4899","#06b6d4","#eab308","#ef4444","#64748b"];
-
-const uid = () => "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const pad = n => String(n).padStart(2,"0");
-const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const fmtTime = (h,m) => `${pad(h)}:${pad(m||0)}`;
-const parseDate = s => {const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);};
-const isSameDay = (a,b) => a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
-const fmtTimeDisplay = t => {if(!t)return"";const[h,m]=t.split(":").map(Number);const ap=h>=12?"PM":"AM";return`${h%12||12}:${pad(m)} ${ap}`;};
-const fmtHourLabel = h => h===0?"12 AM":h<12?`${h} AM`:h===12?"12 PM":`${h-12} PM`;
-const esc = s => s?s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"):"";
-
-function getDefaultTitle(typeId){
-  const t=EVENT_TYPES.find(x=>x.id===typeId);
-  return t?t.label+" With Dealership Accelerator":"";
-}
-
-function getDuration(typeId){
-  const t=EVENT_TYPES.find(x=>x.id===typeId);
-  return t?t.dur:45;
-}
-
-// Get actual duration in minutes from start/end time, fallback to type duration
-function getEvtDurMins(evt){
-  if(evt.startTime&&evt.endTime){
-    const[sh,sm]=evt.startTime.split(":").map(Number);
-    const[eh,em]=evt.endTime.split(":").map(Number);
-    const diff=(eh*60+em)-(sh*60+sm);
-    if(diff>0)return diff;
-  }
-  return getDuration(evt.type);
-}
-function getEvtStartMin(evt){
-  if(!evt.startTime)return 0;
-  return parseInt(evt.startTime.split(":")[1])||0;
-}
-
-// ─── OUTCOME HELPERS ───
-const OUTCOMES=[
-  {id:"showed",label:"S",full:"Showed",color:"#3b82f6"},
-  {id:"no-show",label:"NS",full:"No Show",color:"#ef4444"},
-  {id:"rescheduled",label:"R",full:"Resched",color:"#f97316"},
-  {id:"cancelled",label:"C",full:"Cancel",color:"#64748b"},
-  {id:"sale",label:"$",full:"Sale",color:"#22c55e"}
-];
-
-// Close CRM Custom Activity Type IDs — mapped by DA call type
-const CLOSE_CUSTOM_ACTIVITY={
-  "demo":"actitype_4d6xJDgG76nWxTtS1aGEIn",
-  "led":"actitype_71jF76iANEIul39AAgIcOM",
-  "sync":"actitype_2912GKCy7hJS6QfKB6d99l"
-};
-// Sale outcome uses its own activity type regardless of call type
-const CLOSE_SALE_ACTIVITY="actitype_08DCUgDXOI6hvzOc3QD8qi";
-
-function outcomeButtonsHtml(evtId,currentOutcome,compact){
-  let html=`<div class="outcome-row" onclick="event.stopPropagation()">`;
-  OUTCOMES.forEach(o=>{
-    const isActive=currentOutcome===o.id;
-    html+=`<button class="oq-btn${isActive?" active":""}" data-oc="${o.id}" title="${o.full}" onclick="event.stopPropagation();setQuickOutcome('${evtId}','${o.id}')">${compact?o.label:o.full}</button>`;
-  });
-  html+=`</div>`;
-  return html;
-}
-
-function outcomeDotHtml(outcome){
-  if(!outcome)return"";
-  const o=OUTCOMES.find(x=>x.id===outcome);
-  if(!o)return"";
-  return `<span class="outcome-dot" style="background:${o.color}" title="${o.full}"></span>`;
-}
-
-// ─── OUTCOME INDICATOR (✓/✗ on events) ───
-function needsOutcome(evt){
-  // Only scheduled calls with a time need outcome tracking
-  // Exclude GCal-imported events that aren't DA call types
-  if(!evt.startTime)return false;
-  if(evt.gcalImported&&evt.type==='demo'&&!evt.dealership)return false;
-  return true;
-}
-
-function outcomeIndicatorHtml(evt){
-  if(!needsOutcome(evt))return'';
-  if(evt.outcome)return'<span class="outcome-ind marked" title="Outcome: '+esc(evt.outcome)+'">✓</span>';
-  return'<span class="outcome-ind unmarked" title="No outcome logged">✗</span>';
-}
-
-function getUnmarkedEventsToday(userId){
-  const today=fmtDate(new Date());
-  return state.events.filter(e=>{
-    if(e.date!==today)return false;
-    if(e.closerId!==userId&&e.sdrId!==userId)return false;
-    if(!needsOutcome(e))return false;
-    if(e.outcome)return false;
-    return true;
-  });
-}
-
-function tryOpenEod(){
-  const userId=_currentUser?.id;if(!userId)return;
-  const unmarked=getUnmarkedEventsToday(userId);
-  if(unmarked.length>0){
-    const mc=document.getElementById("modalContainer");
-    mc.innerHTML='<div class="overlay" onclick="closeModal()"><div class="modal" style="width:420px;max-width:95vw" onclick="event.stopPropagation()">'+
-      '<div class="modal-hdr"><span class="modal-title">⚠ Unmarked Outcomes</span><button class="close-x" onclick="closeModal()">✕</button></div>'+
-      '<div style="padding:24px 18px;text-align:center">'+
-        '<div style="font-size:36px;margin-bottom:12px">⚠️</div>'+
-        '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:8px">You have '+unmarked.length+' unmarked call outcome'+(unmarked.length>1?'s':'')+' today</div>'+
-        '<div style="font-size:12px;color:var(--t3);margin-bottom:16px">Log those outcomes before submitting your EOD report.</div>'+
-        '<div style="text-align:left;padding:8px 12px;background:var(--bg2);border:1px solid var(--brd2);max-height:200px;overflow-y:auto">'+
-          unmarked.map(e=>{
-            const t=EVENT_TYPES.find(x=>x.id===e.type);
-            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd3)">'+
-              '<span class="outcome-ind unmarked">✗</span>'+
-              '<span style="font-size:11px;color:var(--t1)">'+esc(e.title)+'</span>'+
-              '<span style="font-family:var(--fm);font-size:10px;color:var(--t5);margin-left:auto">'+(e.startTime?fmtTimeDisplay(e.startTime):'')+'</span>'+
-            '</div>';
-          }).join('')+
+// ─── ADMIN DASHBOARD ───
+async function loadAdminDashboard(){
+  const { data: profiles } = await _sb.from('profiles').select('id, email, is_admin, created_at').order('created_at', { ascending: true });
+  if(!profiles) return;
+  const { data: allComm } = await _sb.from('commission_data').select('user_id, state, updated_at');
+  const commMap = {};
+  (allComm||[]).forEach(c => { commMap[c.user_id] = c; });
+  const admins = profiles.filter(p => p.is_admin).length;
+  const reps = profiles.length - admins;
+  document.getElementById('adStatUsers').textContent = profiles.length;
+  document.getElementById('adStatAdmins').textContent = admins;
+  document.getElementById('adStatReps').textContent = reps;
+  const list = document.getElementById('adminUserList');
+  list.innerHTML = '';
+  profiles.forEach(p => {
+    const initials = (p.email||'?').slice(0,2).toUpperCase();
+    const comm = commMap[p.id];
+    const hasData = comm && comm.state && Object.keys(comm.state).length > 0;
+    const updated = comm?.updated_at ? new Date(comm.updated_at).toLocaleDateString() : 'Never';
+    const isMe = p.id === _currentUser.id;
+    const div = document.createElement('div');
+    div.className = 'admin-user';
+    div.innerHTML =
+      '<div class="admin-user-left">'+
+        '<div class="admin-user-avatar">'+initials+'</div>'+
+        '<div class="admin-user-info">'+
+          '<div class="admin-user-email">'+esc(p.email)+(isMe?' <span style="color:var(--t3);font-size:9px">(you)</span>':'')+'</div>'+
+          '<div class="admin-user-meta">Last saved: '+updated+(hasData?' &middot; <span>Has data</span>':'')+'</div>'+
         '</div>'+
       '</div>'+
-      '<div class="modal-foot"><div></div><button class="btn btn-acc" onclick="closeModal()">Got it</button></div>'+
-    '</div></div>';
-    return;
-  }
-  openEodModal();
-}
-
-function setQuickOutcome(evtId,outcome){
-  const evt=state.events.find(e=>e.id===evtId);
-  if(!evt)return;
-  // Toggle off if already set to the same
-  if(evt.outcome===outcome){evt.outcome="";evt.closeActivity=null;saveState();render();return;}
-  // Reschedule triggers the reschedule flow
-  if(outcome==="rescheduled"){showRescheduleModal(evtId);return;}
-  // Sale triggers sale details modal first
-  if(outcome==="sale"){showSaleDetailsModal(evtId);return;}
-  evt.outcome=outcome;
-  saveState();
-  // Show outcome confirmed modal with draft activity (skip for cancel — just mark it)
-  if(outcome==="cancelled"){render();return;}
-  showOutcomeConfirmed(evtId,outcome);
-}
-
-// ─── SALE DETAILS MODAL ───
-function showSaleDetailsModal(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const mc=document.getElementById("modalContainer");
-  mc.innerHTML='<div class="overlay" onclick="closeModal()"><div class="modal" style="width:420px;max-width:95vw" onclick="event.stopPropagation()">'+
-    '<div class="modal-hdr"><span class="modal-title">Sale Details</span><button class="close-x" onclick="closeModal()">✕</button></div>'+
-    '<div style="padding:16px 18px;text-align:center;border-bottom:1px solid var(--brd2)">'+
-      '<div style="font-size:28px;margin-bottom:4px">💰</div>'+
-      '<div style="font-size:13px;font-weight:600;color:var(--t1)">'+esc(evt.title)+'</div>'+
-      '<div style="font-size:11px;color:var(--t3)">'+(evt.dealership?esc(evt.dealership):'')+'</div>'+
-    '</div>'+
-    '<div style="padding:16px 18px">'+
-      '<div class="field"><div class="field-label">Contract Value</div>'+
-        '<input class="fi mono" id="sdContractVal" placeholder="$0.00" value="'+esc(evt.contractValue||'')+'"></div>'+
-      '<div class="field"><div class="field-label">Cash Collected</div>'+
-        '<input class="fi mono" id="sdCashCollected" placeholder="$0.00" value="'+esc(evt.cashCollectedSale||'')+'"></div>'+
-      '<div class="field"><div class="field-label">Contract Length</div>'+
-        '<select class="fi" id="sdContractLen">'+
-          '<option value="">— Select —</option>'+
-          '<option value="4 Month"'+(evt.contractLength==='4 Month'?' selected':'')+'>4 Month</option>'+
-          '<option value="6 Month"'+(evt.contractLength==='6 Month'?' selected':'')+'>6 Month</option>'+
-          '<option value="12 Month"'+(evt.contractLength==='12 Month'?' selected':'')+'>12 Month</option>'+
-          '<option value="Custom"'+(evt.contractLength==='Custom'?' selected':'')+'>Custom</option>'+
-        '</select></div>'+
-    '</div>'+
-    '<div class="modal-foot">'+
-      '<button class="btn" onclick="closeModal()">Cancel</button>'+
-      '<button class="btn btn-acc" onclick="confirmSaleDetails(\''+evtId+'\')">Confirm Sale</button>'+
-    '</div>'+
-  '</div></div>';
-}
-
-function confirmSaleDetails(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  evt.outcome='sale';
-  evt.contractValue=document.getElementById('sdContractVal')?.value||'';
-  evt.cashCollectedSale=document.getElementById('sdCashCollected')?.value||'';
-  evt.contractLength=document.getElementById('sdContractLen')?.value||'';
-  saveState(evtId);
-  closeModal();
-  showOutcomeConfirmed(evtId,'sale');
-}
-
-// ─── DRAFT ACTIVITY TEMPLATES ───
-function buildDraftActivity(evt,outcome){
-  const t=EVENT_TYPES.find(x=>x.id===evt.type);
-  const typeName=t?t.label:"Call";
-  const dealer=evt.dealership||"[Dealership]";
-  const contact=evt.contact||"[Contact]";
-  const outcomeLabel=outcome==="showed"?"Showed":outcome==="no-show"?"No Show":outcome==="sale"?"Sale":"Unknown";
-  const dateStr=evt.date;
-  const timeStr=evt.startTime?fmtTimeDisplay(evt.startTime):"";
-
-  let note=`${typeName} — ${outcomeLabel}\n`;
-  note+=`Date: ${dateStr}${timeStr?" at "+timeStr:""}\n`;
-  note+=`Dealership: ${dealer}\n`;
-  note+=`Contact: ${contact}\n`;
-
-  // Call-type specific next steps
-  if(outcome==="showed"){
-    if(evt.type==="demo")note+=`\nDemo completed. Prospect engaged.\nNext Step: Schedule LED Review Call.`;
-    else if(evt.type==="led")note+=`\nLED Review completed. Reviewed lead engagement data and AI performance.\nNext Step: Schedule Sync Call.`;
-    else if(evt.type==="sync")note+=`\nSync Call completed. Aligned on next steps.\nNext Step: Schedule Setup Call if moving forward.`;
-    else if(evt.type==="setup")note+=`\nSetup Call completed. System configuration reviewed.\nNext Step: Schedule Manager Training.`;
-    else if(evt.type==="mgr-training")note+=`\nManager Training completed.\nNext Step: Schedule Sales Team Training.`;
-    else if(evt.type==="team-training")note+=`\nSales Team Training completed.\nNext Step: Schedule Launch Call.`;
-    else if(evt.type==="launch")note+=`\nLaunch Call completed. System is live.\nNext Step: Schedule One Week Check In.`;
-    else if(evt.type==="1wk-checkin")note+=`\nOne Week Check In completed. Reviewed early performance.\nNext Step: Schedule Three Week Check In.`;
-    else if(evt.type==="3wk-checkin")note+=`\nThree Week Check In completed. Reviewed full ramp metrics.`;
-    else if(evt.type==="1on1")note+=`\nOne on One Meeting completed.`;
-    else note+=`\nCall completed.`;
-  }else if(outcome==="no-show"){
-    note+=`\nContact did not attend. Follow up required.\nAction: Reach out to reschedule.`;
-  }else if(outcome==="sale"){
-    note+=`\nDeal closed! Moving to onboarding.\nNext Step: Schedule Setup Call.`;
-  }
-
-  // Append existing notes if any
-  if(evt.notes){
-    const cleanNotes=evt.notes.startsWith("--- Notes from ")?evt.notes.split("\n").slice(1).join("\n"):evt.notes;
-    if(cleanNotes.trim())note+=`\n\nRep Notes:\n${cleanNotes}`;
-  }
-  return note;
-}
-
-function showOutcomeConfirmed(evtId,outcome){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const t=EVENT_TYPES.find(x=>x.id===evt.type);
-  const mc=document.getElementById("modalContainer");
-  const o=OUTCOMES.find(x=>x.id===outcome);
-  const oColor=o?o.color:"#888";
-  const oLabel=o?o.full:outcome;
-  const draft=buildDraftActivity(evt,outcome);
-  const hasCloseId=!!evt.closeLeadId;
-  const customTypeId=outcome==='sale'?CLOSE_SALE_ACTIVITY:(CLOSE_CUSTOM_ACTIVITY[evt.type]||null);
-  const activityLabel=outcome==='sale'?'New Sale Activity':customTypeId?(t?t.label+' Activity':'Custom Activity'):'Note Activity';
-
-  mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="modal" style="width:480px;max-width:95vw" onclick="event.stopPropagation()">
-    <div style="padding:16px 18px;border-bottom:3px solid ${oColor};text-align:center">
-      <div style="font-size:28px;margin-bottom:6px">${outcome==="showed"?"✓":outcome==="no-show"?"✗":outcome==="sale"?"💰":"📋"}</div>
-      <div style="font-size:14px;font-weight:700;color:var(--t1)">Outcome: <span style="color:${oColor}">${oLabel}</span></div>
-      <div style="font-size:12px;color:var(--t3);margin-top:4px">${esc(evt.title)}${evt.dealership?" · "+esc(evt.dealership):""}</div>
-      <div style="font-size:10px;color:var(--cyan);margin-top:6px;font-family:var(--fm)">Will draft: ${activityLabel}</div>
-    </div>
-    <div style="padding:16px 18px">
-      <div class="field-label" style="margin-bottom:6px">Draft Activity for Close CRM</div>
-      <textarea class="fi" id="ocDraftNote" rows="8" style="font-size:11px;line-height:1.5">${esc(draft)}</textarea>
-      ${!hasCloseId?`<div style="margin-top:8px">
-        <div class="field-label" style="margin-bottom:4px">Close Lead ID <span style="color:var(--orange);font-weight:400;text-transform:none;letter-spacing:0">(missing — add to link to Close)</span></div>
-        <input class="fi mono" id="ocLeadId" placeholder="lead_xxxxx" style="font-size:12px">
-      </div>`:""}
-    </div>
-    <div style="padding:0 18px 16px;display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-acc" style="width:100%;text-align:center;padding:10px" onclick="logDraftAndOpenClose('${evtId}')">📋 LOG TO CLOSE & OPEN CONTACT ↗</button>
-      <button class="btn" style="width:100%;text-align:center" onclick="logDraftLocal('${evtId}')">💾 SAVE DRAFT LOCALLY</button>
-      <button class="btn" style="width:100%;text-align:center;color:var(--t5)" onclick="skipDraftActivity('${evtId}')">SKIP — JUST MARK OUTCOME</button>
-    </div>
-  </div></div>`;
-}
-
-async function logDraftAndOpenClose(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const draftNote=document.getElementById("ocDraftNote")?.value||"";
-  // If Lead ID was entered inline (wasn't on event originally)
-  const inlineLeadId=document.getElementById("ocLeadId")?.value.trim()||"";
-  if(inlineLeadId&&!evt.closeLeadId){
-    evt.closeLeadId=inlineLeadId;
-  }
-  evt.closeActivity={logged:true,timestamp:new Date().toISOString(),note:draftNote};
-  saveState(evtId);
-
-  if(evt.closeLeadId){
-    // Determine which custom activity type to use
-    const customTypeId=evt.outcome==='sale'?CLOSE_SALE_ACTIVITY:(CLOSE_CUSTOM_ACTIVITY[evt.type]||null);
-
-    if(customTypeId){
-      // Log ONLY custom activity — no note
-      try{
-        const {data,error}=await _sb.functions.invoke('close-proxy',{
-          body:{action:'log_custom_activity',lead_id:evt.closeLeadId,custom_activity_type_id:customTypeId}
-        });
-        console.log('Close custom activity response:',JSON.stringify(data));
-        if(data?.success)evt.closeActivity.closeActivityId=data.activity_id;
-        if(data?.close_detail)console.warn('Close rejection detail:',data.close_detail);
-        if(error)console.warn('Close custom activity error:',error);
-      }catch(e){console.warn('Close custom activity failed:',e);}
-    } else {
-      // Fallback: log as note for call types without custom activity
-      if(draftNote){
-        try{
-          const {data,error}=await _sb.functions.invoke('close-proxy',{
-            body:{action:'log_activity',lead_id:evt.closeLeadId,note:draftNote}
-          });
-          if(error||data?.error)console.warn('Close note error:',data?.error||error);
-        }catch(e){console.warn('Close note failed:',e);}
-      }
-    }
-
-    // Open Close contact record
-    window.open('https://app.close.com/lead/'+evt.closeLeadId+'/','_blank');
-  }
-  closeModal();render();
-}
-
-function logDraftLocal(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const draftNote=document.getElementById("ocDraftNote")?.value||"";
-  const inlineLeadId=document.getElementById("ocLeadId")?.value.trim()||"";
-  if(inlineLeadId&&!evt.closeLeadId)evt.closeLeadId=inlineLeadId;
-  evt.closeActivity={logged:true,timestamp:new Date().toISOString(),note:draftNote};
-  saveState(evtId);closeModal();render();
-}
-
-function skipDraftActivity(evtId){
-  closeModal();render();
-}
-
-function promptAddLeadId(evtId){
-  const leadId=prompt("Enter Close Lead ID for this event (e.g. lead_xxxxx):");
-  if(!leadId||!leadId.trim())return;
-  const evt=state.events.find(e=>e.id===evtId);
-  if(!evt)return;
-  evt.closeLeadId=leadId.trim();
-  saveState();
-  // Now open in Close
-  window.open(`https://app.close.com/lead/${evt.closeLeadId}/`,"_blank");
-  closeModal();
-  setTimeout(()=>showDetail(evtId),100);
-}
-
-// ─── RESCHEDULE FLOW ───
-function showRescheduleModal(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const mc=document.getElementById("modalContainer");
-  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
-  const defDate=fmtDate(tomorrow);
-  const defTime=evt.startTime||"10:00";
-
-  mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="resched-modal modal" onclick="event.stopPropagation()">
-    <div class="modal-hdr"><span class="modal-title">Reschedule Event</span><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div style="padding:14px 18px">
-      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">
-        Original: <strong style="color:var(--t1)">${esc(evt.title)}</strong><br>
-        <span style="font-family:var(--fm);font-size:11px;color:var(--t5)">${evt.date} ${evt.startTime?fmtTimeDisplay(evt.startTime):""}</span>
-      </div>
-      <div class="field field-row field-row-2">
-        <div><div class="field-label">New Date</div><input type="date" class="fi" id="rDate" value="${defDate}"></div>
-        <div><div class="field-label">New Time</div><input type="time" class="fi" id="rTime" value="${defTime}"></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-acc" onclick="confirmReschedule('${evtId}')">Reschedule</button>
-    </div>
-  </div></div>`;
-}
-
-function confirmReschedule(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const newDate=document.getElementById("rDate").value;
-  const newTime=document.getElementById("rTime").value;
-  if(!newDate)return;
-
-  // Mark original as rescheduled
-  evt.outcome="rescheduled";
-  const newId=uid();
-  evt.rescheduledTo=newId;
-
-  // Create new event with same details
-  const newEvt={
-    id:newId,
-    title:evt.title,
-    type:evt.type,
-    date:newDate,
-    startTime:newTime,
-    endTime:calcEndTime(newTime,evt.type),
-    sdrId:evt.sdrId||"",
-    closerId:evt.closerId||"",
-    dealership:evt.dealership||"",
-    contact:evt.contact||"",
-    closeLeadId:evt.closeLeadId||"",
-    notes:evt.notes||"",
-    outcome:"",
-    rescheduledFrom:evtId,
-    zoomLink:"",
-    attendees:(evt.attendees||[]).slice()
-  };
-  state.events.push(newEvt);
-  saveState();closeModal();render();
-}
-
-// ─── AUTO-POPULATE NOTES (Step 8) ───
-// Sales flow: Demo → LED Review → Sync Call
-const NOTES_CHAIN={"led":"demo","sync":"led"};
-
-function findPriorCallNotes(typeId,closeLeadId,dealership){
-  const priorType=NOTES_CHAIN[typeId];
-  if(!priorType)return null;
-  // Find most recent event of the prior type matching by closeLeadId or dealership
-  const candidates=state.events.filter(e=>{
-    if(e.type!==priorType)return false;
-    if(closeLeadId&&e.closeLeadId&&e.closeLeadId.toLowerCase()===closeLeadId.toLowerCase())return true;
-    if(dealership&&e.dealership&&e.dealership.toLowerCase()===dealership.toLowerCase())return true;
-    return false;
+      '<div class="admin-user-right">'+
+        '<span class="admin-badge'+(p.is_admin?'':' rep')+'">'+(p.is_admin?'Admin':'Rep')+'</span>'+
+        (!isMe?'<button class="admin-toggle-btn" data-uid="'+p.id+'" data-admin="'+(p.is_admin?'1':'0')+'" onclick="toggleAdmin(this)">'+(p.is_admin?'Remove Admin':'Make Admin')+'</button>':'')+
+        '<button class="admin-view-btn" onclick="viewUserTracker(\''+p.id+'\',\''+esc(p.email)+'\')">View Tracker</button>'+
+      '</div>';
+    list.appendChild(div);
   });
-  if(!candidates.length)return null;
-  // Sort by date desc, then startTime desc
-  candidates.sort((a,b)=>{
-    const dc=b.date.localeCompare(a.date);
-    if(dc!==0)return dc;
-    return(b.startTime||"").localeCompare(a.startTime||"");
-  });
-  const best=candidates[0];
-  if(!best.notes)return null;
-  const priorLabel=EVENT_TYPES.find(x=>x.id===priorType);
-  const dateStr=best.date;
-  return `--- Notes from ${priorLabel?priorLabel.label:priorType} (${dateStr}) ---\n${best.notes}`;
 }
 
-function tryAutoPopulateNotes(){
-  const typeEl=document.getElementById("mType");
-  const notesEl=document.getElementById("mNotes");
-  const closeIdEl=document.getElementById("mCloseId");
-  const dealerEl=document.getElementById("mDealer");
-  if(!typeEl||!notesEl)return;
-  const typeId=typeEl.value;
-  if(!NOTES_CHAIN[typeId])return;
-  const closeId=closeIdEl?closeIdEl.value.trim():"";
-  const dealer=dealerEl?dealerEl.value.trim():"";
-  if(!closeId&&!dealer)return;
-  // Only auto-populate if notes are empty or were previously auto-populated
-  const cur=notesEl.value.trim();
-  if(cur&&!cur.startsWith("--- Notes from "))return;
-  const notes=findPriorCallNotes(typeId,closeId,dealer);
-  if(notes)notesEl.value=notes;
+async function toggleAdmin(btn){
+  const uid = btn.dataset.uid;const wasAdmin = btn.dataset.admin === '1';const newVal = !wasAdmin;
+  btn.textContent = 'Saving...';btn.disabled = true;
+  await _sb.from('profiles').update({ is_admin: newVal }).eq('id', uid);
+  await loadAdminDashboard();
 }
 
-// ─── STATE ───
-let state = {
-  events: [],
-  users: [],
-  view: "week",
-  currentDate: new Date(),
-  filterUsers: [],
-  filterTypes: [],
-  sidebarOpen: true
-};
+async function viewUserTracker(userId, email){
+  _viewingUserId = userId;_viewingUserEmail = email;
+  const isOwn = userId === _currentUser.id;
+  S = {};turboActivated = {};
+  await loadFromSupabase(userId);
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('userEmail').textContent = email;
+  document.getElementById('btnDashboard').style.display = 'inline-block';
+  const banner = document.getElementById('viewingBanner');
+  if(!isOwn){document.getElementById('viewingName').textContent = email;banner.classList.add('show');}
+  else{banner.classList.remove('show');}
+  init();
+}
+
+function backToAdmin(){
+  S = {};turboActivated = {};_viewingUserId = null;_viewingUserEmail = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('viewingBanner').classList.remove('show');
+  document.getElementById('admin-screen').style.display = 'block';
+  loadAdminDashboard();
+}
 
 // ─── PERSISTENCE (Supabase) ───
-// Capitalize first letter of each word
-function capName(s){if(!s)return'';return s.replace(/\b\w/g,c=>c.toUpperCase());}
-
-// Maps JS camelCase ↔ DB snake_case
-function evtToRow(e){
-  return {
-    id:e.id, title:e.title, type:e.type, date:e.date,
-    start_time:e.startTime||null, end_time:e.endTime||null,
-    sdr_id:e.sdrId||null, closer_id:e.closerId||null,
-    dealership:e.dealership||null, contact:e.contact||null,
-    close_lead_id:e.closeLeadId||null, notes:e.notes||null,
-    outcome:e.outcome||"", zoom_link:e.zoomLink||null,
-    zoom_meeting_id:e.zoomMeetingId||null,
-    gcal_event_id:e.gcalEventId||null,
-    gcal_link:e.gcalLink||null,
-    attendees:e.attendees||[], rescheduled_from:e.rescheduledFrom||null,
-    rescheduled_to:e.rescheduledTo||null, gcal_synced:e.gcalSynced||false,
-    invites_sent:e.invitesSent||false, close_activity:e.closeActivity||null,
-    gcal_imported:e.gcalImported||false,
-    source:e.source||'inbound',
-    contract_value:e.contractValue||null,
-    cash_collected_sale:e.cashCollectedSale||null,
-    contract_length:e.contractLength||null,
-    created_by:e.createdBy||_currentUser?.id||null
-  };
-}
-function rowToEvt(r){
-  return {
-    id:r.id, title:r.title, type:r.type, date:r.date,
-    startTime:r.start_time, endTime:r.end_time,
-    sdrId:r.sdr_id, closerId:r.closer_id,
-    dealership:r.dealership, contact:r.contact,
-    closeLeadId:r.close_lead_id, notes:r.notes,
-    outcome:r.outcome||"", zoomLink:r.zoom_link,
-    zoomMeetingId:r.zoom_meeting_id,
-    gcalEventId:r.gcal_event_id,
-    gcalLink:r.gcal_link,
-    attendees:r.attendees||[], rescheduledFrom:r.rescheduled_from,
-    rescheduledTo:r.rescheduled_to, gcalSynced:r.gcal_synced,
-    invitesSent:r.invites_sent, closeActivity:r.close_activity,
-    gcalImported:r.gcal_imported||false,
-    source:r.source||'inbound',
-    contractValue:r.contract_value||'',
-    cashCollectedSale:r.cash_collected_sale||'',
-    contractLength:r.contract_length||'',
-    createdBy:r.created_by
-  };
+async function loadFromSupabase(userId){
+  try {
+    const { data, error } = await _sb.from('commission_data').select('state, turbo').eq('user_id', userId).single();
+    if(data){S = data.state || {};turboActivated = data.turbo || {};}
+  } catch(e){ console.warn('Load error:', e); }
 }
 
-async function loadState(){
-  try{
-    // Load events
-    const {data:events,error:evErr}=await _sb.from('calendar_events').select('*').order('date',{ascending:true});
-    if(evErr)throw evErr;
-    state.events=(events||[]).map(rowToEvt);
-    // Load team from profiles
-    const {data:profiles,error:prErr}=await _sb.from('profiles').select('id,email,is_admin,calendar_role,display_name,calendar_color');
-    if(prErr)throw prErr;
-    state.users=(profiles||[]).map(p=>({
-      id:p.id,
-      name:capName(p.display_name||p.email.split('@')[0]),
-      role:p.calendar_role||'Closer',
-      color:p.calendar_color||(p.is_admin?'#D3FB40':'#3b82f6'),
-      email:p.email,
-      isAdmin:p.is_admin
-    }));
-  }catch(err){
-    console.error('Supabase load error:',err);
-    // Fallback: localStorage
-    try{const d=localStorage.getItem("da-calendar-v1");if(d){const p=JSON.parse(d);if(p.events)state.events=p.events;if(p.users?.length)state.users=p.users;}}catch(e){}
-  }
-}
-
-// Debounced save — upserts the specific event that changed
-let _saveQueue=new Set();
 let _saveTimer;
-function saveState(evtId){
-  if(evtId)_saveQueue.add(evtId);
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(flushSave,600);
+async function saveToSupabase(){
+  if(!_currentUser) return;
+  const saveId = _viewingUserId || _currentUser.id;
+  if(saveId !== _currentUser.id) return;
+  try {
+    await _sb.from('commission_data').upsert({
+      user_id: _currentUser.id, state: S, turbo: turboActivated, updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+  } catch(e){ console.warn('Save error:', e); }
 }
 
-async function flushSave(){
-  if(!_currentUser)return;
-  const ids=[..._saveQueue];_saveQueue.clear();
-  try{
-    if(ids.length){
-      const rows=ids.map(id=>{const e=state.events.find(x=>x.id===id);return e?evtToRow(e):null;}).filter(Boolean);
-      if(rows.length){const{error}=await _sb.from('calendar_events').upsert(rows);if(error)console.error('Save error:',error);}
-    }else{
-      // Full save fallback (when called without specific ID)
-      const rows=state.events.map(evtToRow);
-      if(rows.length){const{error}=await _sb.from('calendar_events').upsert(rows);if(error)console.error('Save error:',error);}
-    }
-  }catch(err){console.error('Save error:',err);}
-  // Also keep localStorage as backup
-  try{localStorage.setItem("da-calendar-v1",JSON.stringify({events:state.events,users:state.users}));}catch(e){}
-}
-
-async function deleteEvent_db(id){
-  try{const{error}=await _sb.from('calendar_events').delete().eq('id',id);if(error)console.error('Delete error:',error);}catch(e){console.error(e);}
-}
-
-// ─── FILTERED EVENTS ───
-// Helper: resolve the Closer's user info for Zoom/GCal (falls back to current user)
-function getCloserInfo(evt){
-  if(evt.closerId){
-    const closer=state.users.find(u=>u.id===evt.closerId);
-    if(closer)return {id:closer.id, email:closer.email||''};
-  }
-  return {id:_currentUser?.id||'', email:_currentUser?.email||''};
-}
-// Same but from the form (before event is saved)
-function getCloserInfoFromForm(){
-  const closerId=document.getElementById("mCloser")?.value;
-  if(closerId){
-    const closer=state.users.find(u=>u.id===closerId);
-    if(closer)return {id:closer.id, email:closer.email||''};
-  }
-  return {id:_currentUser?.id||'', email:_currentUser?.email||''};
-}
-function getFiltered(){
-  // When no team filter is active, default to showing only your events
-  const activeUsers=state.filterUsers.length?state.filterUsers:(_currentUser?[_currentUser.id]:[]);
-  return state.events.filter(e=>{
-    if(activeUsers.length&&!activeUsers.includes(e.closerId)&&!activeUsers.includes(e.sdrId)&&!activeUsers.includes(e.userId))return false;
-    if(state.filterTypes.length&&!state.filterTypes.includes(e.type))return false;
-    return true;
-  });
-}
-
-// ─── RENDER ENGINE ───
-function render(){
-  renderNav();
-  renderSidebar();
-  renderCalendar();
-  document.getElementById("evCount").textContent=getFiltered().length+" events";
-}
-
-function renderNav(){
-  const d=state.currentDate;
-  let title="";
-  if(state.view==="month")title=`${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  else if(state.view==="week"){
-    const s=getWeekStart(d),e=new Date(s);e.setDate(e.getDate()+6);
-    title=`${MONTHS[s.getMonth()]} ${s.getDate()} – ${s.getMonth()!==e.getMonth()?MONTHS[e.getMonth()]+" ":""}${e.getDate()}, ${e.getFullYear()}`;
-  }else title=`${DAYS_FULL[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-  document.getElementById("navTitle").textContent=title;
-
-  document.querySelectorAll(".view-btn").forEach(b=>{b.classList.toggle("on",b.dataset.view===state.view);});
-  document.getElementById("filterToggle").classList.toggle("on",state.sidebarOpen);
-}
-
-function renderSidebar(){
-  const sb=document.getElementById("sidebar");
-  sb.classList.toggle("hidden",!state.sidebarOpen);
-
-  // Team filters
-  let tf="";
-  state.users.forEach(u=>{
-    const on=state.filterUsers.includes(u.id);
-    tf+=`<button class="side-btn${on?" on":""}" onclick="toggleUserFilter('${u.id}')">
-      <span class="side-dot" style="background:${u.color}"></span>${esc(u.name)}
-      <span class="side-role">${esc(u.role)}</span></button>`;
-  });
-  document.getElementById("teamFilters").innerHTML=tf;
-  document.getElementById("clearTeamFilter").style.display=state.filterUsers.length?"block":"none";
-
-  // Type filters
-  let yf="";
-  EVENT_TYPES.forEach(t=>{
-    const on=state.filterTypes.includes(t.id);
-    yf+=`<button class="side-btn${on?" on":""}" style="${on?`background:${t.color}11;border-color:${t.color}33`:""}" onclick="toggleTypeFilter('${t.id}')">
-      <span class="side-sq" style="background:${t.color}"></span>${t.label}</button>`;
-  });
-  document.getElementById("typeFilters").innerHTML=yf;
-  document.getElementById("clearTypeFilter").style.display=state.filterTypes.length?"block":"none";
-
-  // Stats — always YOUR events only
-  const ws=getWeekStart(new Date()),we=new Date(ws);we.setDate(we.getDate()+6);
-  const myId=_currentUser?.id;
-  const myWeekEvts=state.events.filter(e=>{
-    const ed=parseDate(e.date);
-    if(ed<ws||ed>we)return false;
-    return e.closerId===myId||e.sdrId===myId||e.userId===myId;
-  });
-  // Role-based type filtering
-  const SALES_TYPES=new Set(["demo","led","sync"]);
-  const AM_TYPES=new Set(["setup","mgr-training","team-training","launch","1wk-checkin","3wk-checkin","1on1"]);
-  let relevantTypes;
-  if(_isAdmin||_calendarRole==='Admin')relevantTypes=null; // show all
-  else if(_calendarRole==='AM')relevantTypes=AM_TYPES;
-  else relevantTypes=SALES_TYPES; // Closer, Setter
-
-  const byType={};
-  myWeekEvts.forEach(e=>{
-    if(relevantTypes&&!relevantTypes.has(e.type))return;
-    byType[e.type]=(byType[e.type]||0)+1;
-  });
-  const relevantCount=Object.values(byType).reduce((a,b)=>a+b,0);
-
-  let stats=`<div class="side-label" style="margin-bottom:8px">Your Week</div>
-    <div class="stats-num">${relevantCount}</div>
-    <div class="stats-sub">scheduled events</div>
-    <div style="font-size:9px;color:var(--t6);margin-top:2px;font-style:italic">Your calendar only</div>`;
-
-  if(relevantCount>0){
-    stats+=`<div style="margin-top:8px;cursor:pointer;display:flex;align-items:center;gap:4px" onclick="document.getElementById('statsBreakdown').classList.toggle('hidden')">
-      <span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--t5)">Breakdown</span>
-      <span style="font-size:8px;color:var(--t6)">▼</span>
-    </div>
-    <div id="statsBreakdown" class="hidden">`;
-    Object.entries(byType).sort((a,b)=>b[1]-a[1]).forEach(([type,count])=>{
-      const t=EVENT_TYPES.find(x=>x.id===type);
-      if(t)stats+=`<div class="stats-row"><span class="stats-row-l">${t.label}</span><span class="stats-row-v" style="color:${t.color}">${count}</span></div>`;
-    });
-    stats+=`</div>`;
-  }
-
-  document.getElementById("statsBox").innerHTML=stats;
-}
-
-function renderCalendar(){
-  const el=document.getElementById("calMain");
-  if(state.view==="month")el.innerHTML=renderMonth();
-  else if(state.view==="week")el.innerHTML=renderWeek();
-  else el.innerHTML=renderDay();
-}
-
-// ─── MONTH VIEW ───
-function renderMonth(){
-  const d=state.currentDate,y=d.getFullYear(),m=d.getMonth();
-  const firstDay=new Date(y,m,1).getDay();
-  const daysInMonth=new Date(y,m+1,0).getDate();
-  const prevDays=new Date(y,m,0).getDate();
-  const today=new Date();const todayStr=fmtDate(today);
-  const evts=getFiltered();
-
-  let cells=[];
-  for(let i=firstDay-1;i>=0;i--)cells.push({day:prevDays-i,outside:true,date:fmtDate(new Date(y,m-1,prevDays-i))});
-  for(let i=1;i<=daysInMonth;i++)cells.push({day:i,outside:false,date:fmtDate(new Date(y,m,i))});
-  const rem=42-cells.length;
-  for(let i=1;i<=rem;i++)cells.push({day:i,outside:true,date:fmtDate(new Date(y,m+1,i))});
-
-  let html=`<div class="month-hdr">${DAYS.map(d=>`<div class="month-hdr-cell">${d}</div>`).join("")}</div><div class="month-grid">`;
-  cells.forEach(c=>{
-    const isToday=c.date===todayStr;
-    const dayEvts=evts.filter(e=>e.date===c.date).sort((a,b)=>(a.startTime||"").localeCompare(b.startTime||""));
-    let cls="month-cell";if(c.outside)cls+=" outside";if(isToday)cls+=" today";
-    html+=`<div class="${cls}" onclick="openNewEvent('${c.date}')">`;
-    html+=`<div class="month-day">${c.day}</div>`;
-    dayEvts.slice(0,3).forEach(evt=>{
-      const t=EVENT_TYPES.find(x=>x.id===evt.type);
-      html+=`<div class="month-ev${evt.outcome==='cancelled'?' cancelled':''}" style="background:${t?t.color:"#555"}18;border-color:${t?t.color:"#555"}" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
-      if(evt.startTime)html+=`<span class="month-ev-time">${fmtTimeDisplay(evt.startTime)}</span>`;
-      html+=`${evt.gcalImported?'<span style="opacity:.5;font-size:8px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}${outcomeIndicatorHtml(evt)}${outcomeDotHtml(evt.outcome)}`;
-      html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
-      html+=`</div>`;
-    });
-    if(dayEvts.length>3)html+=`<div class="month-more">+${dayEvts.length-3} more</div>`;
-    html+=`</div>`;
-  });
-  html+=`</div>`;
-  return html;
-}
-
-// ─── WEEK VIEW ───
-function getWeekStart(d){const r=new Date(d);r.setDate(r.getDate()-r.getDay());r.setHours(0,0,0,0);return r;}
-
-function renderWeek(){
-  const ws=getWeekStart(state.currentDate);
-  const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return d;});
-  const today=new Date();const evts=getFiltered();
-
-  let html=`<div class="week-hdr" style="grid-template-columns:56px repeat(7,1fr)"><div style="padding:8px"></div>`;
-  days.forEach(d=>{
-    const isToday=isSameDay(d,today);
-    html+=`<div class="week-hdr-cell"><div class="week-hdr-day">${DAYS[d.getDay()]}</div><div class="week-hdr-num${isToday?" today":""}">${d.getDate()}</div></div>`;
-  });
-  html+=`</div><div class="time-grid" style="grid-template-columns:56px repeat(7,1fr)">`;
-
-  HOURS.forEach(h=>{
-    html+=`<div class="time-label" style="grid-column:1;grid-row:${h+1}"><span>${fmtHourLabel(h)}</span></div>`;
-    days.forEach((day,di)=>{
-      const dateStr=fmtDate(day);
-      const slotEvts=evts.filter(e=>e.date===dateStr&&e.startTime&&parseInt(e.startTime.split(":")[0])===h);
-      html+=`<div class="time-slot" style="grid-column:${di+2};grid-row:${h+1}" onclick="openNewEvent('${dateStr}',${h})">`;
-      slotEvts.forEach(evt=>{
-        const t=EVENT_TYPES.find(x=>x.id===evt.type);
-        const durMins=getEvtDurMins(evt);
-        const startMin=getEvtStartMin(evt);
-        const topPx=Math.round((startMin/60)*100);
-        const hPx=Math.round((durMins/60)*100);
-        html+=`<div class="slot-ev${evt.outcome==='cancelled'?' cancelled':''}" style="background:${t?t.color:"#555"}22;border-color:${t?t.color:"#555"};top:${topPx}px;height:${hPx}px" onclick="event.stopPropagation();showDetail('${evt.id}')">
-          <span class="slot-ev-time">${fmtTimeDisplay(evt.startTime)} </span>${evt.gcalImported?'📅 ':''}${esc(evt.title)}${outcomeIndicatorHtml(evt)}${outcomeDotHtml(evt.outcome)}`;
-        html+=outcomeButtonsHtml(evt.id,evt.outcome,true);
-        html+=`</div>`;
-      });
-      html+=`</div>`;
-    });
-  });
-  html+=`</div>`;
-
-  // Auto-scroll to 6am after render
-  setTimeout(()=>{const el=document.getElementById("calMain");if(el)el.scrollTop=6*100;},10);
-  return html;
-}
-
-// ─── DAY VIEW ───
-function renderDay(){
-  const dateStr=fmtDate(state.currentDate);
-  const evts=getFiltered().filter(e=>e.date===dateStr);
-  const allDay=evts.filter(e=>!e.startTime);
-
-  let html="";
-  if(allDay.length){
-    html+=`<div class="allday-bar"><span class="allday-label">All Day</span>`;
-    allDay.forEach(evt=>{
-      const t=EVENT_TYPES.find(x=>x.id===evt.type);
-      html+=`<span class="allday-ev" style="background:${t?t.color:"#555"}22;border-color:${t?t.color:"#555"}" onclick="showDetail('${evt.id}')">${esc(evt.title)}</span>`;
-    });
-    html+=`</div>`;
-  }
-
-  HOURS.forEach(h=>{
-    const hourEvts=evts.filter(e=>e.startTime&&parseInt(e.startTime.split(":")[0])===h);
-    html+=`<div class="day-hour" onclick="openNewEvent('${dateStr}',${h})">`;
-    html+=`<div class="day-hour-label"><span>${fmtHourLabel(h)}</span></div>`;
-    html+=`<div class="day-hour-content">`;
-    hourEvts.forEach(evt=>{
-      const t=EVENT_TYPES.find(x=>x.id===evt.type);
-      const closer=state.users.find(x=>x.id===evt.closerId);
-      const sdr=state.users.find(x=>x.id===evt.sdrId);
-      const legacyUser=!closer&&!sdr?state.users.find(x=>x.id===evt.userId):null;
-      const dur=getEvtDurMins(evt);
-      const hPx=Math.round((dur/60)*100);
-      html+=`<div class="day-ev${evt.outcome==='cancelled'?' cancelled':''}" style="background:${t?t.color:"#555"}15;border-color:${t?t.color:"#555"};min-height:${hPx}px" onclick="event.stopPropagation();showDetail('${evt.id}')">`;
-      html+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
-      html+=`<span class="day-ev-title">${evt.gcalImported?'<span style="opacity:.6;font-size:11px" title="Imported from GCal">📅</span> ':''}${esc(evt.title)}${outcomeIndicatorHtml(evt)}</span>`;
-      html+=`<span class="day-ev-time">${fmtTimeDisplay(evt.startTime)}${evt.endTime?" - "+fmtTimeDisplay(evt.endTime):""} <span style="color:var(--t5)">${dur}m</span></span>`;
-      html+=`</div>`;
-      const metaParts=[];
-      if(evt.dealership)metaParts.push(esc(evt.dealership));
-      if(closer)metaParts.push(`<span style="color:${closer.color}">${esc(closer.name)}</span>`);
-      if(sdr)metaParts.push(`<span style="color:${sdr.color}">${esc(sdr.name)}</span> <span style="color:var(--t5)">(SDR)</span>`);
-      if(legacyUser)metaParts.push(`<span style="color:${legacyUser.color}">${esc(legacyUser.name)}</span>`);
-      if(metaParts.length)html+=`<div class="day-ev-meta">${metaParts.join(" · ")}</div>`;
-      if(evt.notes)html+=`<div class="day-ev-notes">${esc(evt.notes)}</div>`;
-      // Reschedule chain links
-      if(evt.rescheduledFrom){const orig=state.events.find(e=>e.id===evt.rescheduledFrom);if(orig)html+=`<div style="margin-top:3px"><span class="resched-link" onclick="event.stopPropagation();showDetail('${orig.id}')">← Rescheduled from ${orig.date}</span></div>`;}
-      if(evt.rescheduledTo){const nxt=state.events.find(e=>e.id===evt.rescheduledTo);if(nxt)html+=`<div style="margin-top:3px"><span class="resched-link" onclick="event.stopPropagation();showDetail('${nxt.id}')">→ Rescheduled to ${nxt.date}</span></div>`;}
-      // Always-visible outcome buttons in day view
-      html+=`<div class="outcome-row" style="display:flex;margin-top:5px" onclick="event.stopPropagation()">`;
-      OUTCOMES.forEach(o=>{
-        const isActive=evt.outcome===o.id;
-        html+=`<button class="oq-btn${isActive?" active":""}" data-oc="${o.id}" title="${o.full}" onclick="event.stopPropagation();setQuickOutcome('${evt.id}','${o.id}')" style="font-size:9px;padding:2px 6px">${o.full}</button>`;
-      });
-      html+=`</div>`;
-      html+=`</div>`;
-    });
-    html+=`</div></div>`;
-  });
-
-  setTimeout(()=>{const el=document.getElementById("calMain");if(el)el.scrollTop=6*100;},10);
-  return html;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ACTIONS
-// ═══════════════════════════════════════════════════════════════
-function setView(v){state.view=v;render();}
-function navigate(dir){
-  const d=new Date(state.currentDate);
-  if(state.view==="month")d.setMonth(d.getMonth()+dir);
-  else if(state.view==="week")d.setDate(d.getDate()+dir*7);
-  else d.setDate(d.getDate()+dir);
-  state.currentDate=d;render();
-}
-function goToday(){state.currentDate=new Date();render();}
-function toggleSidebar(){state.sidebarOpen=!state.sidebarOpen;render();}
-function toggleUserFilter(id){
-  const i=state.filterUsers.indexOf(id);
-  if(i>=0)state.filterUsers.splice(i,1);else state.filterUsers.push(id);
-  render();
-}
-function toggleTypeFilter(id){
-  const i=state.filterTypes.indexOf(id);
-  if(i>=0)state.filterTypes.splice(i,1);else state.filterTypes.push(id);
-  render();
-}
-function clearTeamFilter(){state.filterUsers=[];render();} // Empty = defaults to self in getFiltered
-function clearTypeFilter(){state.filterTypes=[];render();}
-
-// ═══════════════════════════════════════════════════════════════
-// EVENT MODAL
-// ═══════════════════════════════════════════════════════════════
-let modalAttendees=[];
-
-function openNewEvent(date,hour){
-  const d=date||fmtDate(state.currentDate);
-  const st=hour!==undefined?fmtTime(hour,0):"";
-  showEventModal({date:d,startTime:st,type:"demo"});
-}
-
-function showEventModal(evt){
-  const isEdit=!!evt.id;
-  modalAttendees=(evt.attendees||[]).slice();
-  const mc=document.getElementById("modalContainer");
-  const closers=state.users.filter(u=>u.role==="Closer"||u.role==="Admin");
-  const setters=state.users.filter(u=>u.role==="Setter"||u.role==="Admin");
-  let sdrOpts=`<option value="">Unassigned</option>`;
-  setters.forEach(u=>{sdrOpts+=`<option value="${u.id}"${evt.sdrId===u.id?" selected":""}>${esc(u.name)}</option>`;});
-  let closerOpts=`<option value="">Unassigned</option>`;
-  closers.forEach(u=>{closerOpts+=`<option value="${u.id}"${evt.closerId===u.id?" selected":""}>${esc(u.name)}</option>`;});
-  let typeOpts="";
-  EVENT_TYPES.forEach(t=>{typeOpts+=`<option value="${t.id}"${evt.type===t.id?" selected":""}>${t.icon} ${t.label}</option>`;});
-  const curType=evt.type||"demo";
-  const curDur=getDuration(curType);
-  const autoTitle=isEdit?evt.title:getDefaultTitle(curType);
-  const showSource=curType==='demo'||curType==='led';
-  const curSource=evt.source||'inbound';
-  let outcomeOpts=`<option value="">— Not set —</option><option value="showed"${evt.outcome==="showed"?" selected":""}>Showed</option>
-    <option value="no-show"${evt.outcome==="no-show"?" selected":""}>No Show</option>
-    <option value="rescheduled"${evt.outcome==="rescheduled"?" selected":""}>Rescheduled</option>
-    <option value="cancelled"${evt.outcome==="cancelled"?" selected":""}>Cancelled</option>
-    <option value="sale"${evt.outcome==="sale"?" selected":""}>Sale</option>`;
-
-  mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="modal" style="width:520px;max-width:95vw" onclick="event.stopPropagation()">
-    <div class="modal-hdr"><span class="modal-title">${isEdit?"Edit Event":"New Event"}</span><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="field field-row field-row-2">
-        <div><div class="field-label">Call Type</div>
-          <select class="fi" id="mType" onchange="onTypeChange()">${typeOpts}</select></div>
-        <div id="mSourceWrap" style="${showSource?'':'display:none'}"><div class="field-label">Source</div>
-          <select class="fi" id="mSource">
-            <option value="inbound"${curSource==='inbound'?' selected':''}>Inbound</option>
-            <option value="outbound"${curSource==='outbound'?' selected':''}>Outbound</option>
-          </select></div>
-      </div>
-      <div class="field"><div class="field-label">Title</div>
-        <input class="fi" id="mTitle" value="${esc(autoTitle)}" placeholder="Auto-populated from call type"></div>
-      <div class="field field-row field-row-2">
-        <div><div class="field-label">SDR (Setter)</div><select class="fi" id="mSdr">${sdrOpts}</select></div>
-        <div><div class="field-label">Closer</div><select class="fi" id="mCloser">${closerOpts}</select></div>
-      </div>
-      <div class="field field-row field-row-2">
-        <div><div class="field-label">Date</div><input type="date" class="fi" id="mDate" value="${evt.date||""}"></div>
-        <div><div class="field-label">Start Time</div><input type="time" class="fi" id="mStart" value="${evt.startTime||""}"></div>
-      </div>
-      <div class="field" style="margin-top:-4px">
-        <span id="mDuration" style="font-family:var(--fm);font-size:11px;color:var(--t4)">${curDur} min block${evt.startTime?" · Ends "+calcEndTime(evt.startTime,curType):""}</span>
-      </div>
-      <div class="field field-row field-row-2">
-        <div><div class="field-label">Dealership / Account</div><input class="fi" id="mDealer" value="${esc(evt.dealership||"")}" placeholder="e.g. Edwards CDJR"></div>
-        <div><div class="field-label">Contact Name</div><input class="fi" id="mContact" value="${esc(evt.contact||"")}" placeholder="e.g. Rjay Williamson"></div>
-      </div>
-      <div class="field"><div class="field-label">Close Lead ID <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--t6)">(optional)</span></div>
-        <div style="display:flex;gap:6px">
-          <input class="fi mono" id="mCloseId" value="${esc(evt.closeLeadId||"")}" placeholder="lead_xxxxx" style="flex:1">
-          <button class="lookup-btn" id="closeLookupBtn" onclick="closeLookup()">🔍 Lookup</button>
-        </div>
-        <div id="closeLookupResult"></div>
-      </div>
-      <div class="field"><div class="field-label">Notes</div>
-        <textarea class="fi" id="mNotes" rows="3" placeholder="Prep notes, agenda items, context...">${esc(evt.notes||"")}</textarea></div>
-      <div class="field"><div class="field-label">Zoom Meeting</div>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${evt.zoomLink?`<span class="zoom-link" onclick="copyToClipboard('${esc(evt.zoomLink)}')" title="Click to copy">${esc(evt.zoomLink)}</span>`
-          :`<button class="gcal-btn" onclick="generateZoomLink()" id="zoomGenBtn">📹 Generate Zoom Link</button>`}
-          <input type="hidden" id="mZoomLink" value="${esc(evt.zoomLink||"")}">
-          <input type="hidden" id="mZoomMeetingId" value="${esc(evt.zoomMeetingId||"")}">
-        </div>
-        <div id="zoomResult"></div>
-      </div>
-      <div class="field"><div class="field-label">Attendees</div>
-        <div class="attendee-list" id="mAttendeeList">${(evt.attendees||[]).map((a,i)=>`<span class="attendee-chip">${esc(a)}<span class="att-x" onclick="removeAttendee(${i})">✕</span></span>`).join("")}</div>
-        <div class="attendee-add">
-          <input class="fi" id="mAttEmail" placeholder="email@example.com" onkeydown="if(event.key==='Enter'){event.preventDefault();addAttendee();}">
-          <button class="lookup-btn" onclick="addAttendee()">+ Add</button>
-        </div>
-      </div>
-      ${isEdit?`<div class="field"><div class="field-label">Outcome</div><select class="fi" id="mOutcome">${outcomeOpts}</select></div>`:""}
-    </div>
-    <div class="modal-foot">
-      <div>${isEdit&&canDeleteEvent(evt)?`<button class="btn btn-red" onclick="deleteEvent('${evt.id}')">Delete</button>`:""}</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-acc" onclick="saveEvent('${evt.id||""}')">${isEdit?"Save Changes":"Create Event"}</button>
-      </div>
-    </div>
-  </div></div>`;
-
-  // Wire up duration display update on time change
-  const startEl=document.getElementById("mStart");
-  if(startEl)startEl.addEventListener("change",updateDurationLabel);
-
-  // Wire up auto-populate notes on dealership/closeLeadId blur (Step 8)
-  const dealerEl=document.getElementById("mDealer");
-  const closeIdEl=document.getElementById("mCloseId");
-  if(dealerEl)dealerEl.addEventListener("blur",tryAutoPopulateNotes);
-  if(closeIdEl)closeIdEl.addEventListener("blur",tryAutoPopulateNotes);
-
-  setTimeout(()=>{const t=document.getElementById("mType");if(t)t.focus();},50);
-}
-
-function onTypeChange(){
-  const typeId=document.getElementById("mType").value;
-  const titleEl=document.getElementById("mTitle");
-  // Only auto-populate if title is empty or matches a previous auto-title pattern
-  if(titleEl){
-    const cur=titleEl.value.trim();
-    const isAutoTitle=!cur||EVENT_TYPES.some(t=>cur===t.label+" With Dealership Accelerator");
-    if(isAutoTitle)titleEl.value=getDefaultTitle(typeId);
-  }
-  // Show/hide source toggle for demos and LED reviews
-  const srcWrap=document.getElementById("mSourceWrap");
-  if(srcWrap)srcWrap.style.display=(typeId==='demo'||typeId==='led')?'':'none';
-  updateDurationLabel();
-  tryAutoPopulateNotes();
-}
-
-function updateDurationLabel(){
-  const typeId=document.getElementById("mType")?.value||"demo";
-  const startTime=document.getElementById("mStart")?.value||"";
-  const dur=getDuration(typeId);
-  const el=document.getElementById("mDuration");
-  if(el)el.textContent=dur+" min block"+(startTime?" · Ends "+fmtTimeDisplay(calcEndTime(startTime,typeId)):"");
-}
-
-function saveEvent(existingId){
-  const typeId=document.getElementById("mType").value;
-  const startTime=document.getElementById("mStart").value;
-  const data={
-    title:document.getElementById("mTitle").value.trim(),
-    type:typeId,
-    date:document.getElementById("mDate").value,
-    startTime:startTime,
-    endTime:calcEndTime(startTime,typeId),
-    sdrId:document.getElementById("mSdr").value,
-    closerId:document.getElementById("mCloser").value,
-    dealership:document.getElementById("mDealer").value.trim(),
-    contact:document.getElementById("mContact").value.trim(),
-    closeLeadId:document.getElementById("mCloseId").value.trim(),
-    notes:document.getElementById("mNotes").value.trim(),
-    outcome:document.getElementById("mOutcome")?.value||"",
-    zoomLink:document.getElementById("mZoomLink")?.value||"",
-    zoomMeetingId:document.getElementById("mZoomMeetingId")?.value||"",
-    attendees:modalAttendees.slice(),
-    source:document.getElementById("mSource")?.value||"inbound"
-  };
-  if(!data.title)return;
-
-  let evtId;
-  if(existingId){
-    const idx=state.events.findIndex(e=>e.id===existingId);
-    if(idx>=0)state.events[idx]={...state.events[idx],...data};
-    evtId=existingId;
-  }else{
-    evtId=uid();
-    state.events.push({id:evtId,...data});
-  }
-  modalAttendees=[];
-  saveState(evtId);closeModal();render();
-
-  // Auto-sync to Closer's Google Calendar (proxy checks their connection)
-  if(data.date&&data.startTime){
-    autoSyncToGcal(evtId);
-  }
-}
-
-// Auto-sync event to Google Calendar (on Closer's calendar)
-async function autoSyncToGcal(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  const closerInfo=getCloserInfo(evt);
-  try{
-    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
-      body:{
-        action:'create_event',
-        user_id:closerInfo.id,
-        event:{
-          title:evt.title,
-          date:evt.date,
-          start_time:evt.startTime,
-          end_time:evt.endTime,
-          notes:evt.notes||'',
-          attendees:evt.attendees||[],
-          zoom_link:evt.zoomLink||''
-        }
-      }
-    });
-    if(error||data?.error){return;} // Silently skip if Closer hasn't connected GCal
-    if(data?.success){
-      evt.gcalSynced=true;
-      evt.gcalEventId=data.gcal_event_id;
-      evt.gcalLink=data.html_link;
-      saveState(evtId);
-    }
-  }catch(e){}
-}
-
-function canDeleteEvent(evt){
-  if(_isAdmin)return true;
-  if(!_currentUser)return false;
-  return evt.createdBy===_currentUser.id;
-}
-
-function deleteEvent(id){
-  const evt=state.events.find(e=>e.id===id);
-  if(!evt)return;
-  if(!canDeleteEvent(evt)){alert("You can only delete events you created.");return;}
-  if(!confirm("Delete this event?"))return;
-
-  // Delete from Google Calendar if synced (uses Closer's connection)
-  if(evt.gcalEventId){
-    const closerInfo=getCloserInfo(evt);
-    _sb.functions.invoke('gcal-proxy',{
-      body:{action:'delete_event',user_id:closerInfo.id,gcal_event_id:evt.gcalEventId}
-    }).catch(()=>{});
-  }
-
-  // Delete from Zoom if meeting exists
-  if(evt.zoomMeetingId){
-    _sb.functions.invoke('zoom-proxy',{
-      body:{action:'delete_meeting',meeting_id:String(evt.zoomMeetingId)}
-    }).catch(()=>{});
-  }
-
-  state.events=state.events.filter(e=>e.id!==id);
-  deleteEvent_db(id);
-  closeModal();render();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// EVENT DETAIL
-// ═══════════════════════════════════════════════════════════════
-function showDetail(id){
-  const evt=state.events.find(e=>e.id===id);if(!evt)return;
-  const t=EVENT_TYPES.find(x=>x.id===evt.type);
-  const sdr=state.users.find(x=>x.id===evt.sdrId);
-  const closer=state.users.find(x=>x.id===evt.closerId);
-  // Backwards compat: old events may have userId instead of sdrId/closerId
-  const legacyUser=!sdr&&!closer?state.users.find(x=>x.id===evt.userId):null;
-  const d=parseDate(evt.date);
-  const dur=getDuration(evt.type);
-  const mc=document.getElementById("modalContainer");
-
-  let outcomeHtml="";
-  if(evt.outcome){
-    const oc=evt.outcome==="sale"?"background:rgba(34,197,94,.15);color:#22c55e":
-      evt.outcome==="showed"?"background:rgba(59,130,246,.15);color:#3b82f6":
-      evt.outcome==="no-show"?"background:rgba(239,68,68,.15);color:#ef4444":
-      evt.outcome==="rescheduled"?"background:rgba(249,115,22,.15);color:#f97316":
-      "background:rgba(255,255,255,.05);color:#888";
-    outcomeHtml=`<span class="outcome-badge" style="${oc}">${evt.outcome}</span>`;
-  }
-
-  mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="modal" style="width:400px;max-width:95vw" onclick="event.stopPropagation()">
-    <div style="padding:14px 18px;border-bottom:3px solid ${t?t.color:"#555"}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px">${esc(evt.title)}</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span class="type-badge" style="background:${t?t.color:"#555"}22;color:${t?t.color:"#888"}">${t?t.icon:""} ${t?t.label:"Unknown"}</span>
-            <span style="font-family:var(--fm);font-size:10px;color:var(--t5)">${dur} min</span>
-            ${evt.gcalImported?'<span class="integ-badge live" style="font-size:8px">📅 Imported</span>':''}
-            ${outcomeHtml}
-          </div>
-        </div>
-        <button class="close-x" onclick="closeModal()">✕</button>
-      </div>
-    </div>
-    <div style="padding:14px 18px">
-      <div class="detail-row"><span class="detail-label">Date</span><span class="detail-val">${DAYS_FULL[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}</span></div>
-      ${evt.startTime?`<div class="detail-row"><span class="detail-label">Time</span><span class="detail-val">${fmtTimeDisplay(evt.startTime)}${evt.endTime?" - "+fmtTimeDisplay(evt.endTime):""}</span></div>`:""}
-      ${closer?`<div class="detail-row"><span class="detail-label">Closer</span><span class="detail-val" style="color:${closer.color}">${esc(closer.name)}</span></div>`:""}
-      ${sdr?`<div class="detail-row"><span class="detail-label">SDR</span><span class="detail-val" style="color:${sdr.color}">${esc(sdr.name)}</span></div>`:""}
-      ${legacyUser?`<div class="detail-row"><span class="detail-label">Assigned</span><span class="detail-val" style="color:${legacyUser.color}">${esc(legacyUser.name)}</span></div>`:""}
-      ${evt.dealership?`<div class="detail-row"><span class="detail-label">Dealership</span><span class="detail-val">${esc(evt.dealership)}</span></div>`:""}
-      ${evt.contact?`<div class="detail-row"><span class="detail-label">Contact</span><span class="detail-val">${esc(evt.contact)}</span></div>`:""}
-      ${evt.closeLeadId?`<div class="detail-row"><span class="detail-label">Close ID</span><span class="detail-val" style="display:flex;align-items:center;gap:6px"><span class="mono">${esc(evt.closeLeadId)}</span><a class="close-link" href="https://app.close.com/lead/${esc(evt.closeLeadId)}/" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open in Close ↗</a></span></div>`:""}
-      ${evt.rescheduledFrom?(()=>{const orig=state.events.find(e=>e.id===evt.rescheduledFrom);return orig?`<div class="detail-row"><span class="detail-label">Rescheduled From</span><span class="resched-link" onclick="event.stopPropagation();closeModal();setTimeout(()=>showDetail('${orig.id}'),100)">${orig.date} ${orig.startTime?fmtTimeDisplay(orig.startTime):""}</span></div>`:""})():""}
-      ${evt.rescheduledTo?(()=>{const nxt=state.events.find(e=>e.id===evt.rescheduledTo);return nxt?`<div class="detail-row"><span class="detail-label">Rescheduled To</span><span class="resched-link" onclick="event.stopPropagation();closeModal();setTimeout(()=>showDetail('${nxt.id}'),100)">${nxt.date} ${nxt.startTime?fmtTimeDisplay(nxt.startTime):""}</span></div>`:""})():""}
-      ${evt.zoomLink?`<div class="detail-row"><span class="detail-label">Zoom</span><a class="zoom-link" href="${esc(evt.zoomLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;font-size:11px">📹 ${esc(evt.zoomLink)}</a></div>`:""}
-      ${evt.gcalLink?`<div class="detail-row"><span class="detail-label">Google Cal</span><a class="gcal-btn synced" href="${esc(evt.gcalLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;text-decoration:none;display:inline-flex">📅 View in Google Calendar ↗</a></div>`:""}
-      ${evt.attendees&&evt.attendees.length?`<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="detail-label">Attendees</span><div>${evt.attendees.map(a=>`<span class="attendee-chip">${esc(a)}</span>`).join("")}</div></div>`:""}
-      ${evt.notes?`<div class="detail-notes">${esc(evt.notes)}</div>`:""}
-      <div class="integ-section">
-        <div class="integ-section-title">Actions</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${evt.gcalSynced
-            ?`<span class="gcal-btn synced" style="cursor:default">✓ Synced to GCal</span>`
-            :!_gcalConnected
-              ?`<span style="font-size:10px;color:var(--orange);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();connectGoogleCalendar()">Connect Google Calendar to auto-sync</span>`
-              :`<span style="font-size:10px;color:var(--t5)">📅 Will sync on next save</span>`}
-          ${evt.attendees&&evt.attendees.length?`<button class="gcal-btn" onclick="event.stopPropagation();sendGcalInvites('${evt.id}')">📧 ${evt.invitesSent?"Resend":"Send"} Invites</button>`:""}
-          ${evt.outcome&&evt.outcome!=="rescheduled"?`<button class="close-link" onclick="event.stopPropagation();mockLogToClose('${evt.id}')" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${evt.closeActivity?"📋 Re-Log to Close":"📋 Log to Close"}</button>`:""}
-          ${evt.closeLeadId
-            ?`<a class="close-link" href="https://app.close.com/lead/${esc(evt.closeLeadId)}/" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;text-decoration:none">📞 Open in Close ↗</a>`
-            :`<button class="close-link" onclick="event.stopPropagation();promptAddLeadId('${evt.id}')" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">📞 Open in Close ↗ <span style="font-size:8px;opacity:.6">(No Lead ID)</span></button>`}
-        </div>
-        ${evt.closeActivity?`<div style="margin-top:8px;padding:8px;background:var(--bg3);border:1px solid var(--brd2)">
-          <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--green);margin-bottom:4px">✓ Draft Activity Logged</div>
-          ${evt.closeActivity.note?`<div style="font-size:11px;color:var(--t4);white-space:pre-wrap;max-height:80px;overflow-y:auto;font-family:var(--fm);line-height:1.4">${esc(evt.closeActivity.note).substring(0,200)}${evt.closeActivity.note.length>200?"...":""}</div>`:""}
-        </div>`:""}
-      </div>
-      <div style="margin-top:12px">
-        <div class="field-label" style="margin-bottom:6px">Quick Outcome</div>
-        <div style="display:flex;gap:4px">
-          ${OUTCOMES.map(o=>{
-            const isActive=evt.outcome===o.id;
-            return `<button class="oq-btn${isActive?" active":""}" data-oc="${o.id}" style="font-size:10px;padding:3px 8px" onclick="setQuickOutcome('${evt.id}','${o.id}')">${o.full}</button>`;
-          }).join("")}
-        </div>
-      </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      ${canDeleteEvent(evt)?`<button class="btn btn-red" onclick="deleteEvent('${evt.id}')">Delete</button>`:`<div></div>`}
-      <button class="btn btn-acc" onclick="editFromDetail('${evt.id}')">Edit</button>
-    </div>
-  </div></div>`;
-}
-
-function editFromDetail(id){
-  const evt=state.events.find(e=>e.id===id);
-  if(!evt)return;
-  closeModal();
-  setTimeout(()=>showEventModal(evt),50);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// TEAM MANAGEMENT MODAL (Supabase profiles-based)
-// ═══════════════════════════════════════════════════════════════
-let editingUserId=null;
-
-function openTeamModal(){
-  editingUserId=null;
-  renderTeamModal();
-}
-
-function renderTeamModal(){
-  const mc=document.getElementById("modalContainer");
-  const eu=editingUserId?state.users.find(u=>u.id===editingUserId):null;
-  const canEdit=_isAdmin;
-
-  let rows="";
-  state.users.forEach(u=>{
-    const isMe=_currentUser&&u.id===_currentUser.id;
-    rows+=`<div class="team-row"><div class="team-info">
-      <span class="side-dot" style="background:${u.color}"></span>
-      <span class="team-name">${esc(u.name)}${isMe?' <span style="font-size:9px;color:var(--acc)">(you)</span>':""}</span>
-      <span class="team-role">${u.role}</span>
-      ${u.email?`<span style="font-size:9px;color:var(--t6);font-family:var(--fm);margin-left:auto">${esc(u.email)}</span>`:""}
-    </div>${canEdit?`<div class="team-actions">
-      <button class="btn" style="font-size:10px;padding:3px 8px" onclick="startEditUser('${u.id}')">Edit</button>
-    </div>`:""}</div>`;
-  });
-
-  let editForm="";
-  if(eu&&canEdit){
-    let roleOpts="";
-    ROLES.forEach(r=>{roleOpts+=`<option value="${r}"${r===eu.role?" selected":""}>${r}</option>`;});
-    let colorDots="";
-    TEAM_COLORS.forEach(c=>{colorDots+=`<div class="color-dot${c===eu.color?" on":""}" style="background:${c}" data-color="${c}" onclick="pickTeamColor('${c}')"></div>`;});
-    editForm=`<div class="team-form">
-      <div class="side-label" style="margin-bottom:10px">Edit: ${esc(eu.email||eu.name)}</div>
-      <div class="field-row field-row-2" style="margin-bottom:10px">
-        <div><div class="field-label">Display Name</div><input class="fi" id="tuName" value="${esc(eu.name)}" placeholder="Display name"></div>
-        <div><div class="field-label">Calendar Role</div><select class="fi" id="tuRole">${roleOpts}</select></div>
-      </div>
-      <div class="field-label">Color</div>
-      <div class="color-picker" id="colorPicker">${colorDots}</div>
-      <input type="hidden" id="tuColor" value="${eu.color}">
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="editingUserId=null;renderTeamModal()">Cancel</button>
-        <button class="btn btn-acc" onclick="saveTeamMember()">Update</button>
-      </div>
-    </div>`;
-  }else if(!canEdit){
-    editForm=`<div style="padding:12px 18px;font-size:11px;color:var(--t5);border-top:1px solid var(--brd2)">Only admins can edit team roles. Contact an admin to update your role.</div>`;
-  }
-
-  mc.innerHTML=`<div class="overlay" onclick="closeModal()"><div class="modal" style="width:480px;max-width:95vw" onclick="event.stopPropagation()">
-    <div class="modal-hdr"><span class="modal-title">Team Management</span><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div style="padding:12px 18px">${rows}</div>
-    ${editForm}
-    <div style="padding:10px 18px;border-top:1px solid var(--brd2);font-size:10px;color:var(--t6)">
-      Team members are managed through account signup. ${canEdit?'Edit roles and display names above.':''}
-    </div>
-  </div></div>`;
-}
-
-function pickTeamColor(c){
-  document.getElementById("tuColor").value=c;
-  document.querySelectorAll(".color-dot").forEach(d=>{d.classList.toggle("on",d.getAttribute("data-color")===c);});
-}
-
-function startEditUser(id){editingUserId=id;renderTeamModal();}
-
-async function saveTeamMember(){
-  if(!editingUserId||!_isAdmin)return;
-  const name=document.getElementById("tuName").value.trim();
-  const role=document.getElementById("tuRole").value;
-  const color=document.getElementById("tuColor").value;
-  if(!name)return;
-
-  // Update local state
-  const u=state.users.find(x=>x.id===editingUserId);
-  if(u){u.name=name;u.role=role;u.color=color;}
-
-  // Save to Supabase profiles table
-  try{
-    const{error}=await _sb.from('profiles').update({
-      display_name:name,
-      calendar_role:role,
-      calendar_color:color
-    }).eq('id',editingUserId);
-    if(error)console.error('Update profile error:',error);
-  }catch(e){console.error(e);}
-
-  editingUserId=null;
-  renderTeamModal();render();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// INTEGRATIONS — Live via Edge Functions
-// ═══════════════════════════════════════════════════════════════
-
-// ─── Close CRM Lookup (Live) ───
-async function closeLookup(){
-  const leadId=document.getElementById("mCloseId")?.value.trim();
-  if(!leadId){alert("Enter a Close Lead ID first");return;}
-  const btn=document.getElementById("closeLookupBtn");
-  const res=document.getElementById("closeLookupResult");
-  if(!btn||!res)return;
-  btn.classList.add("loading");btn.textContent="⏳ Looking up...";
-
-  try{
-    const {data,error}=await _sb.functions.invoke('close-proxy',{
-      body:{action:'lookup',lead_id:leadId}
-    });
-    btn.classList.remove("loading");btn.textContent="🔍 Lookup";
-
-    if(error||data?.error){
-      res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ Lookup failed: ${esc(data?.error||error?.message||'Unknown error')}</div>`;
-      return;
-    }
-
-    // Auto-fill dealership name
-    const dealerEl=document.getElementById("mDealer");
-    const contactEl=document.getElementById("mContact");
-    if(dealerEl&&!dealerEl.value&&data.display_name)dealerEl.value=data.display_name;
-
-    // Extract contacts and emails
-    const allEmails=[];
-    let firstContactName='';
-    (data.contacts||[]).forEach(c=>{
-      if(!firstContactName&&c.name)firstContactName=c.name;
-      (c.emails||[]).forEach(email=>{
-        if(!allEmails.includes(email))allEmails.push(email);
-      });
-    });
-    if(contactEl&&!contactEl.value&&firstContactName)contactEl.value=firstContactName;
-
-    // Auto-populate attendees
-    allEmails.forEach(email=>{
-      if(!modalAttendees.includes(email))modalAttendees.push(email);
-    });
-    refreshAttendeeList();
-
-    res.innerHTML=`<div class="lookup-result">🏢 <strong style="color:var(--t1)">${esc(data.display_name||'Unknown')}</strong></div>
-      ${firstContactName?`<div class="lookup-result">👤 <strong style="color:var(--t1)">${esc(firstContactName)}</strong></div>`:''}
-      <div class="lookup-result">📧 <span style="color:var(--t3)">${allEmails.length} email(s) found${allEmails.length?' — added to attendees':''}</span></div>
-      ${data.status?`<div class="lookup-result">📋 Status: <strong style="color:var(--t1)">${esc(data.status)}</strong></div>`:''}`;
-
-    tryAutoPopulateNotes();
-
-  }catch(err){
-    btn.classList.remove("loading");btn.textContent="🔍 Lookup";
-    res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ ${esc(err.message||'Connection failed')}</div>`;
-  }
-}
-
-// ─── Step 10: Log Draft Activity to Close (Mock) ───
-function mockLogToClose(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  // If there's an outcome, show the full draft activity modal
-  if(evt.outcome&&evt.outcome!=="rescheduled"){
-    showOutcomeConfirmed(evtId,evt.outcome);
-    return;
-  }
-  // Fallback: just mark as logged
-  evt.closeActivity={logged:true,timestamp:new Date().toISOString(),note:""};
-  saveState();closeModal();setTimeout(()=>showDetail(evtId),100);
-}
-
-// ─── Step 11: Google Calendar Sync (Mock) ───
-// ─── Step 11: Google Calendar (Live) ───
-let _gcalConnected = false;
-
-async function checkGcalConnection(){
-  if(!_currentUser)return;
-  try{
-    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
-      body:{action:'check_connection',user_id:_currentUser.id}
-    });
-    if(error){_gcalConnected=false;return;}
-    _gcalConnected=data?.connected||false;
-  }catch(e){_gcalConnected=false;}
-}
-
-function connectGoogleCalendar(){
-  if(!_currentUser)return;
-  window.location.href=`https://ygoorvnvwvdygqprkxyf.supabase.co/functions/v1/gcal-auth?user_id=${_currentUser.id}`;
-}
-
-async function pushToGcal(evtId){
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  if(!_gcalConnected){connectGoogleCalendar();return;}
-  const closerInfo=getCloserInfo(evt);
-
-  try{
-    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
-      body:{
-        action:'create_event',
-        user_id:closerInfo.id,
-        event:{
-          title:evt.title,
-          date:evt.date,
-          start_time:evt.startTime,
-          end_time:evt.endTime,
-          notes:evt.notes||'',
-          attendees:evt.attendees||[],
-          zoom_link:evt.zoomLink||''
-        }
-      }
-    });
-
-    if(error||data?.error){
-      alert('Google Calendar error: '+(data?.error||error?.message||'Unknown'));
-      return;
-    }
-
-    evt.gcalSynced=true;
-    evt.gcalEventId=data.gcal_event_id;
-    evt.gcalLink=data.html_link;
-    saveState(evtId);closeModal();setTimeout(()=>showDetail(evtId),100);
-  }catch(err){
-    alert('Failed to push to Google Calendar: '+err.message);
-  }
-}
-
-async function sendGcalInvites(evtId){
-  // Invites are sent automatically when we create the event with attendees
-  // This re-pushes the event to send/resend invites
-  const evt=state.events.find(e=>e.id===evtId);if(!evt)return;
-  if(!_gcalConnected){connectGoogleCalendar();return;}
-  if(!evt.attendees||!evt.attendees.length){alert('Add attendees first.');return;}
-
-  try{
-    const closerInfo=getCloserInfo(evt);
-    const {data,error}=await _sb.functions.invoke('gcal-proxy',{
-      body:{
-        action:'create_event',
-        user_id:closerInfo.id,
-        event:{
-          title:evt.title,
-          date:evt.date,
-          start_time:evt.startTime,
-          end_time:evt.endTime,
-          notes:evt.notes||'',
-          attendees:evt.attendees||[],
-          zoom_link:evt.zoomLink||''
-        }
-      }
-    });
-
-    if(error||data?.error){
-      alert('Invite error: '+(data?.error||error?.message||'Unknown'));
-      return;
-    }
-
-    evt.invitesSent=true;
-    evt.gcalSynced=true;
-    saveState(evtId);closeModal();setTimeout(()=>showDetail(evtId),100);
-  }catch(err){
-    alert('Failed to send invites: '+err.message);
-  }
-}
-
-// ─── Step 12: Zoom Link Generation (Mock) ───
-async function generateZoomLink(){
-  const btn=document.getElementById("zoomGenBtn");
-  const res=document.getElementById("zoomResult");
-  const hiddenInput=document.getElementById("mZoomLink");
-  const hiddenMeetingId=document.getElementById("mZoomMeetingId");
-  if(!btn)return;
-  btn.textContent="⏳ Generating...";btn.style.pointerEvents="none";
-
-  // Get event details from the form for the meeting title/duration/time
-  const title=document.getElementById("mTitle")?.value||"DA Calendar Meeting";
-  const typeId=document.getElementById("mType")?.value||"demo";
-  const dur=getDuration(typeId);
-  const evtDate=document.getElementById("mDate")?.value||"";
-  const evtTime=document.getElementById("mStart")?.value||"";
-  // Build ISO start_time for Zoom (e.g. "2026-03-25T10:30:00")
-  const startTime=(evtDate&&evtTime)?`${evtDate}T${evtTime}:00`:"";
-
-  try{
-    const closerInfo=getCloserInfoFromForm();
-    const {data,error}=await _sb.functions.invoke('zoom-proxy',{
-      body:{action:'create_meeting',topic:title,duration:dur,agenda:'Booked via DA Calendar',user_email:closerInfo.email,start_time:startTime,attendees:modalAttendees.slice()}
-    });
-
-    if(error||data?.error){
-      btn.textContent="📹 Generate Zoom Link";btn.style.pointerEvents="";
-      if(res)res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ Zoom error: ${esc(data?.error||error?.message||'Unknown')}</div>`;
-      return;
-    }
-
-    const link=data.join_url;
-    if(hiddenInput)hiddenInput.value=link;
-    if(hiddenMeetingId)hiddenMeetingId.value=data.meeting_id||"";
-    btn.replaceWith(Object.assign(document.createElement("span"),{
-      className:"zoom-link",
-      innerHTML:`📹 ${link}`,
-      title:"Click to copy",
-      onclick:()=>copyToClipboard(link)
-    }));
-    if(res)res.innerHTML=`<div style="font-size:10px;color:var(--green);margin-top:4px">✓ Zoom meeting created (ID: ${data.meeting_id})</div>`;
-
-  }catch(err){
-    btn.textContent="📹 Generate Zoom Link";btn.style.pointerEvents="";
-    if(res)res.innerHTML=`<div style="font-size:10px;color:var(--red);margin-top:4px">✗ ${esc(err.message||'Connection failed')}</div>`;
-  }
-}
-
-// ─── Step 13: Attendee Management ───
-function addAttendee(){
-  const input=document.getElementById("mAttEmail");
-  if(!input)return;
-  const email=input.value.trim();
-  if(!email||!email.includes("@"))return;
-  if(modalAttendees.includes(email))return;
-  modalAttendees.push(email);
-  input.value="";
-  refreshAttendeeList();
-}
-
-function removeAttendee(idx){
-  modalAttendees.splice(idx,1);
-  refreshAttendeeList();
-}
-
-function refreshAttendeeList(){
-  const el=document.getElementById("mAttendeeList");
-  if(!el)return;
-  el.innerHTML=modalAttendees.map((a,i)=>`<span class="attendee-chip">${esc(a)}<span class="att-x" onclick="removeAttendee(${i})">✕</span></span>`).join("");
-}
-
-// ─── Clipboard Helper ───
-function copyToClipboard(text){
-  navigator.clipboard.writeText(text).then(()=>{
-    // Brief visual flash could be added
-  }).catch(()=>{});
-}
-
-// ─── EOD REPORT ───
-function getEodAutoData(dateStr,userId){
-  const evts=state.events.filter(e=>e.date===dateStr&&(e.closerId===userId||e.sdrId===userId));
-  const demos=evts.filter(e=>e.type==='demo');
-  const leds=evts.filter(e=>e.type==='led');
-  const syncs=evts.filter(e=>e.type==='sync');
-  const inDemos=demos.filter(e=>e.source!=='outbound');
-  const outDemos=demos.filter(e=>e.source==='outbound');
-  const inLeds=leds.filter(e=>e.source!=='outbound');
-  const outLeds=leds.filter(e=>e.source==='outbound');
-
-  return {
-    // Closer fields
-    inboundDemosScheduled:inDemos.length,
-    demosShowed:demos.filter(e=>e.outcome==='showed').length,
-    demosRescheduled:demos.filter(e=>e.outcome==='rescheduled').length,
-    demosNoShow:demos.filter(e=>e.outcome==='no-show').length,
-    demosCancelled:demos.filter(e=>e.outcome==='cancelled').length,
-    demosPushedToCollab:demos.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,
-    inboundCollabsScheduled:inLeds.length,
-    collabsShowed:leds.filter(e=>e.outcome==='showed').length,
-    collabsRescheduled:leds.filter(e=>e.outcome==='rescheduled').length,
-    collabsNoShow:leds.filter(e=>e.outcome==='no-show').length,
-    collabsCancelled:leds.filter(e=>e.outcome==='cancelled').length,
-    syncsScheduled:syncs.length,
-    syncsShowed:syncs.filter(e=>e.outcome==='showed').length,
-    syncsNoShow:syncs.filter(e=>e.outcome==='no-show').length,
-    salesUnits:evts.filter(e=>e.outcome==='sale').length,
-    totalContractValue:evts.filter(e=>e.outcome==='sale').reduce((s,e)=>s+parseFloat(String(e.contractValue||'0').replace(/[^0-9.]/g,''))||0,0),
-    totalCashCollected:evts.filter(e=>e.outcome==='sale').reduce((s,e)=>s+parseFloat(String(e.cashCollectedSale||'0').replace(/[^0-9.]/g,''))||0,0),
-    // SDR-specific
-    outboundDemosScheduled:outDemos.length,
-    outboundDemosShowed:outDemos.filter(e=>e.outcome==='showed').length,
-    outboundDemosNoShow:outDemos.filter(e=>e.outcome==='no-show').length,
-    inboundDemosPushedToCollab:inDemos.filter(e=>e.outcome==='showed'||e.outcome==='sale').length,
-    collabsFromInbound:inLeds.length,
-  };
-}
-
-function openEodModal(){
-  const dateStr=fmtDate(new Date());
-  const userId=_currentUser?.id;
-  const role=_calendarRole||'Closer';
-  const isSDR=role==='Setter';
-  const auto=getEodAutoData(dateStr,userId);
-  const mc=document.getElementById("modalContainer");
-  const userName=state.users.find(u=>u.id===userId)?.name||'';
-
-  let html='<div class="overlay" onclick="closeModal()"><div class="modal" style="width:560px;max-width:95vw;max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">';
-  html+='<div class="modal-hdr"><span class="modal-title">📋 End of Day Report — '+(isSDR?'SDR':'Closer')+'</span><button class="close-x" onclick="closeModal()">✕</button></div>';
-  html+='<div style="padding:14px 18px;border-bottom:1px solid var(--brd2);background:var(--bg2)">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center">';
-  html+='<span style="font-size:12px;color:var(--t1);font-weight:600">'+esc(userName)+'</span>';
-  html+='<span style="font-family:var(--fm);font-size:11px;color:var(--t3)">'+dateStr+'</span>';
-  html+='</div>';
-  html+='<div style="font-size:9px;color:var(--acc);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Auto-filled fields are highlighted in green</div>';
-  html+='</div>';
-  html+='<div style="padding:16px 18px">';
-
-  function autoField(label,val){
-    return '<div class="field field-row field-row-2"><div><div class="field-label">'+label+'</div></div><div><input class="fi mono" value="'+val+'" readonly style="background:rgba(62,207,74,.06);border-color:rgba(62,207,74,.15);color:var(--acc);text-align:right"></div></div>';
-  }
-  function manualField(id,label,type){
-    if(type==='textarea')return '<div class="field"><div class="field-label">'+label+'</div><textarea class="fi" id="'+id+'" rows="2" placeholder="..."></textarea></div>';
-    if(type==='yesno')return '<div class="field field-row field-row-2"><div><div class="field-label">'+label+'</div></div><div><select class="fi" id="'+id+'"><option value="yes">Yes</option><option value="no">No</option></select></div></div>';
-    return '<div class="field field-row field-row-2"><div><div class="field-label">'+label+'</div></div><div><input class="fi mono" id="'+id+'" placeholder="0" style="text-align:right"></div></div>';
-  }
-
-  if(isSDR){
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--acc);font-size:10px">INBOUND DEMOS</div>';
-    html+=autoField('Inbound Demos Scheduled',auto.inboundDemosScheduled);
-    html+=autoField('Showed',auto.demosShowed);
-    html+=autoField('No Showed',auto.demosNoShow);
-    html+=autoField('Rescheduled',auto.demosRescheduled);
-    html+=autoField('Cancels',auto.demosCancelled);
-    html+=autoField('Pushed To Collab',auto.inboundDemosPushedToCollab);
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--cyan);font-size:10px">OUTBOUND</div>';
-    html+=autoField('Outbound Demos Scheduled',auto.outboundDemosScheduled);
-    html+=autoField('Outbound Demos Showed',auto.outboundDemosShowed);
-    html+=autoField('Outbound No-Shows',auto.outboundDemosNoShow);
-    html+=manualField('eodOutDials','Outbound Dials','num');
-    html+=manualField('eodLists','Which Lists Did You Call Today?','textarea');
-    html+=manualField('eodMeaningful','Meaningful Conversations (Over 1 Min)','num');
-    html+=manualField('eodCollabsOutbound','Collabs Scheduled From Outbound','num');
-    html+=autoField('Collabs From Inbound Demos',auto.collabsFromInbound);
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--purple);font-size:10px">PERSONAL COLLABS</div>';
-    html+=manualField('eodPCollabsCal','Personal Collabs on Calendar','num');
-    html+=manualField('eodPCollabsShowed','Personal Collabs Showed','num');
-    html+=manualField('eodPCollabsClosed','Personal Collabs Closed','num');
-    html+=manualField('eodPCollabsNS','Personal Collabs No-Showed','num');
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--green);font-size:10px">SALES</div>';
-    html+=autoField('Closed Sets Today',auto.salesUnits);
-    html+=autoField('Contract Value','$'+auto.totalContractValue.toFixed(2));
-    html+=autoField('Cash Collected','$'+auto.totalCashCollected.toFixed(2));
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+=manualField('eodLeadQuality','Lead Quality (Stage 1-5)','num');
-    html+=manualField('eodConfirmed','All Calls Tomorrow Confirmed?','yesno');
-    html+=manualField('eodStuck','Anything You\'re Stuck On?','textarea');
-    html+=manualField('eodDrafts','Updated All Drafts in Close?','yesno');
-    html+=manualField('eodFeedback','Anything for Sales & Marketing?','textarea');
-  }else{
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--blue);font-size:10px">DEMOS</div>';
-    html+=autoField('Inbound Demos Scheduled',auto.inboundDemosScheduled);
-    html+=autoField('Demos Showed',auto.demosShowed);
-    html+=autoField('Demos Rescheduled',auto.demosRescheduled);
-    html+=autoField('Demos No Showed',auto.demosNoShow);
-    html+=autoField('Demos Cancelled',auto.demosCancelled);
-    html+=autoField('Pushed To Collab',auto.demosPushedToCollab);
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--purple);font-size:10px">COLLAB CALLS (LED REVIEWS)</div>';
-    html+=autoField('Collab Calls Scheduled',auto.inboundCollabsScheduled);
-    html+=autoField('Collab Calls Showed',auto.collabsShowed);
-    html+=autoField('Collab Calls Rescheduled',auto.collabsRescheduled);
-    html+=autoField('Collab Calls No Showed',auto.collabsNoShow);
-    html+=autoField('Collab Calls Cancelled',auto.collabsCancelled);
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--cyan);font-size:10px">SYNC CALLS</div>';
-    html+=autoField('Sync Calls Scheduled',auto.syncsScheduled);
-    html+=autoField('Sync Calls Showed',auto.syncsShowed);
-    html+=autoField('Sync Calls No-Show',auto.syncsNoShow);
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+='<div class="field-label" style="margin-bottom:10px;color:var(--green);font-size:10px">SALES</div>';
-    html+=autoField('Sales Units',auto.salesUnits);
-    html+=autoField('Contract Value','$'+auto.totalContractValue.toFixed(2));
-    html+=autoField('Cash Collected','$'+auto.totalCashCollected.toFixed(2));
-    html+='<div style="border-top:1px solid var(--brd);margin:12px 0"></div>';
-    html+=manualField('eodConfirmed','All Calls Tomorrow Confirmed?','yesno');
-    html+=manualField('eodDrafts','Updated All Drafts in Close?','yesno');
-    html+=manualField('eodFeedback','Anything for Sales & Marketing?','textarea');
-  }
-
-  html+='</div>';
-  html+='<div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button>';
-  html+='<button class="btn btn-acc" onclick="submitEodReport()">Submit EOD Report</button>';
-  html+='</div></div></div>';
-  mc.innerHTML=html;
-}
-
-async function submitEodReport(){
-  const dateStr=fmtDate(new Date());
-  const userId=_currentUser?.id;
-  const role=_calendarRole||'Closer';
-  const isSDR=role==='Setter';
-  const auto=getEodAutoData(dateStr,userId);
-  const gv=id=>{const el=document.getElementById(id);return el?el.value:'';};
-
-  const report={
-    user_id:userId,
-    date:dateStr,
-    role:isSDR?'SDR':'Closer',
-    // Auto-filled
-    inbound_demos_scheduled:auto.inboundDemosScheduled,
-    demos_showed:auto.demosShowed,
-    demos_rescheduled:auto.demosRescheduled,
-    demos_no_show:auto.demosNoShow,
-    demos_cancelled:auto.demosCancelled,
-    demos_pushed_to_collab:isSDR?auto.inboundDemosPushedToCollab:auto.demosPushedToCollab,
-    inbound_collabs_scheduled:auto.inboundCollabsScheduled,
-    collabs_showed:auto.collabsShowed,
-    collabs_rescheduled:auto.collabsRescheduled,
-    collabs_no_show:auto.collabsNoShow,
-    collabs_cancelled:auto.collabsCancelled,
-    syncs_scheduled:auto.syncsScheduled,
-    syncs_showed:auto.syncsShowed,
-    syncs_no_show:auto.syncsNoShow,
-    sales_units:auto.salesUnits,
-    total_contract_value:auto.totalContractValue,
-    total_cash_collected:auto.totalCashCollected,
-    // SDR-specific
-    outbound_demos_scheduled:auto.outboundDemosScheduled,
-    outbound_demos_showed:auto.outboundDemosShowed,
-    outbound_demos_no_show:auto.outboundDemosNoShow,
-    outbound_dials:parseInt(gv('eodOutDials'))||0,
-    lists_called:gv('eodLists'),
-    meaningful_conversations:parseInt(gv('eodMeaningful'))||0,
-    collabs_from_outbound:parseInt(gv('eodCollabsOutbound'))||0,
-    collabs_from_inbound:auto.collabsFromInbound||0,
-    personal_collabs_calendar:parseInt(gv('eodPCollabsCal'))||0,
-    personal_collabs_showed:parseInt(gv('eodPCollabsShowed'))||0,
-    personal_collabs_closed:parseInt(gv('eodPCollabsClosed'))||0,
-    personal_collabs_no_show:parseInt(gv('eodPCollabsNS'))||0,
-    lead_quality:parseInt(gv('eodLeadQuality'))||0,
-    // Shared manual
-    calls_confirmed:gv('eodConfirmed')||'yes',
-    drafts_updated:gv('eodDrafts')||'yes',
-    feedback:gv('eodFeedback'),
-    stuck_on:gv('eodStuck')||'',
-    submitted_at:new Date().toISOString()
-  };
-
-  try{
-    const {error}=await _sb.from('eod_reports').upsert(report,{onConflict:'user_id,date'});
-    if(error){console.error('EOD save error:',error);alert('Failed to save: '+error.message);return;}
-    closeModal();
-    alert('EOD Report submitted!');
-  }catch(e){
-    console.error('EOD save error:',e);
-    alert('Failed to save report.');
-  }
-}
-
-// ─── TIMEZONE SYSTEM ───
-let _userTimezone='America/Los_Angeles';
-
-function loadTimezone(){
-  const saved=localStorage.getItem('da-cal-tz');
-  if(saved)_userTimezone=saved;
-  const sel=document.getElementById('tzSelect');
-  if(sel)sel.value=_userTimezone;
-}
-
-function setTimezone(tz){
-  _userTimezone=tz;
-  localStorage.setItem('da-cal-tz',tz);
-  render();
-}
-
-// Convert an ISO dateTime string to date/time in the user's timezone
-function toUserTZ(isoStr){
-  if(!isoStr)return{date:'',time:''};
-  const d=new Date(isoStr);
-  const opts={timeZone:_userTimezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false};
-  const parts=new Intl.DateTimeFormat('en-CA',opts).formatToParts(d);
-  const get=t=>parts.find(p=>p.type===t)?.value||'';
-  const date=get('year')+'-'+get('month')+'-'+get('day');
-  const time=get('hour')+':'+get('minute');
-  return{date,time};
-}
-
-// ─── GOOGLE CALENDAR SYNC — Pull Events IN ───
-let _gcalSyncTimer=null;
-let _lastSyncTime=null;
-let _isSyncing=false;
-const GCAL_SYNC_INTERVAL=3*60*1000; // 3 minutes
-
-function startGcalSync(){
-  setTimeout(syncFromGcal,2000); // Initial sync after 2s
-  _gcalSyncTimer=setInterval(syncFromGcal,GCAL_SYNC_INTERVAL);
-}
-
-async function syncFromGcal(){
-  if(!_currentUser||_isSyncing)return;
-  _isSyncing=true;
-  updateSyncStatus('syncing');
-
-  const now=new Date();
-  const timeMin=new Date(now);timeMin.setDate(timeMin.getDate()-7);
-  const timeMax=new Date(now);timeMax.setDate(timeMax.getDate()+60);
-  const tMin=timeMin.toISOString();
-  const tMax=timeMax.toISOString();
-
-  let totalImported=0;
-
-  for(const user of state.users){
-    try{
-      const {data,error}=await _sb.functions.invoke('gcal-proxy',{
-        body:{action:'list_events',user_id:user.id,time_min:tMin,time_max:tMax}
-      });
-      if(error||data?.error||!data?.events)continue;
-
-      for(const gcalEvt of data.events){
-        if(state.events.some(e=>e.gcalEventId===gcalEvt.id))continue;
-        if(gcalEvt.status==='cancelled')continue;
-
-        const daEvt=mapGcalToDaEvent(gcalEvt,user.id);
-        state.events.push(daEvt);
-        saveState(daEvt.id);
-        totalImported++;
-      }
-    }catch(e){/* user not connected — skip */}
-  }
-
-  _lastSyncTime=new Date();
-  _isSyncing=false;
-  updateSyncStatus('done',totalImported);
-  if(totalImported>0)render();
-}
-
-function manualSync(){syncFromGcal();}
-
-function mapGcalToDaEvent(gcalEvt,userId){
-  let date='',startTime='',endTime='';
-
-  if(gcalEvt.start?.dateTime){
-    const st=toUserTZ(gcalEvt.start.dateTime);
-    date=st.date;
-    startTime=st.time;
-  }else if(gcalEvt.start?.date){
-    date=gcalEvt.start.date;
-  }
-  if(gcalEvt.end?.dateTime){
-    const et=toUserTZ(gcalEvt.end.dateTime);
-    endTime=et.time;
-  }
-
-  const title=gcalEvt.summary||'Imported Event';
-  const type=detectEventType(title);
-
-  // Extract Zoom link from description or conference data
-  let zoomLink='';
-  const desc=gcalEvt.description||'';
-  const zoomMatch=desc.match(/https:\/\/[^\s<"]*zoom\.us\/[^\s<"]*/i);
-  if(zoomMatch)zoomLink=zoomMatch[0];
-  if(!zoomLink&&gcalEvt.conferenceData?.entryPoints){
-    const ve=gcalEvt.conferenceData.entryPoints.find(ep=>ep.entryPointType==='video');
-    if(ve)zoomLink=ve.uri;
-  }
-
-  // Attendees (skip calendar resource emails)
-  const attendees=(gcalEvt.attendees||[])
-    .map(a=>a.email)
-    .filter(e=>e&&!e.endsWith('@calendar.google.com')&&!e.endsWith('@resource.calendar.google.com'));
-
-  return {
-    id:uid(),title:title,type:type,date:date,
-    startTime:startTime,endTime:endTime,
-    closerId:userId,sdrId:'',
-    dealership:'',contact:'',closeLeadId:'',
-    notes:desc.replace(/<[^>]*>/g,'').substring(0,2000),
-    outcome:'',zoomLink:zoomLink,zoomMeetingId:'',
-    attendees:attendees,
-    gcalEventId:gcalEvt.id,gcalSynced:true,gcalImported:true,
-    gcalLink:gcalEvt.htmlLink||'',
-    invitesSent:false,closeActivity:null,
-    rescheduledFrom:'',rescheduledTo:'',
-    createdBy:_currentUser.id
-  };
-}
-
-function detectEventType(title){
-  const l=title.toLowerCase();
-  if(l.includes('demo'))return'demo';
-  if(l.includes('led review')||l.includes('led call'))return'led';
-  if(l.includes('sync call')||l.includes('sync '))return'sync';
-  if(l.includes('setup'))return'setup';
-  if(l.includes('manager training'))return'mgr-training';
-  if(l.includes('sales team training')||l.includes('team training'))return'team-training';
-  if(l.includes('launch'))return'launch';
-  if(l.includes('one week')||l.includes('1 week')||l.includes('1wk'))return'1wk-checkin';
-  if(l.includes('three week')||l.includes('3 week')||l.includes('3wk'))return'3wk-checkin';
-  if(l.includes('1 on 1')||l.includes('one on one')||l.includes('1:1'))return'1on1';
-  return'demo';
-}
-
-function updateSyncStatus(status,count){
-  const el=document.getElementById('syncStatus');
-  if(!el)return;
-  if(status==='syncing'){
-    el.textContent='⟳ Syncing...';
-    el.style.color='var(--cyan)';
-  }else{
-    const ago=_lastSyncTime?formatTimeAgo(_lastSyncTime):'';
-    el.textContent=count>0?`📅 +${count} imported`:`📅 ${ago}`;
-    el.style.color='';
-    if(count>0)setTimeout(()=>{if(el)el.textContent=`📅 ${formatTimeAgo(_lastSyncTime)}`;},5000);
-  }
-}
-
-function formatTimeAgo(date){
-  const diff=Math.floor((Date.now()-date.getTime())/1000);
-  if(diff<60)return'just now';
-  if(diff<3600)return Math.floor(diff/60)+'m ago';
-  return Math.floor(diff/3600)+'h ago';
-}
-
-// ─── CLOSE MODAL ───
-function closeModal(){document.getElementById("modalContainer").innerHTML="";}
-
-// ─── KEYBOARD ───
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape")closeModal();
-});
+function ld(){}
+function sv(){ clearTimeout(_saveTimer); _saveTimer = setTimeout(saveToSupabase, 1200); }
+function svTurbo(){ sv(); }
+function ldTurbo(){}
 
 // ─── INIT ───
-// Auth flow handles init: DOMContentLoaded → checkSession → enterApp → loadState → render
+function init(){
+  ld();ldTurbo();
+  AY=2026;AT='j1';
+  YEARS.forEach(y=>ensureYear(y));
+  migrateTurboFormat();
+  const sel=document.getElementById('yrSel');
+  sel.innerHTML='';
+  YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
+  sel.value=AY;
+  rTabs();rAll();
+}
+
+function rTabs(){
+  const c=document.getElementById('tabs');c.innerHTML='';
+  TD().forEach(t=>{
+    const b=document.createElement('button');b.className='tab'+(t.id===AT?' on':'');
+    const n=(TS()[t.id]?.rows||[]).filter(r=>r.dl&&r.dl.trim()).length;
+    b.innerHTML=t.l+'<span class="tc2">'+n+'</span>';
+    b.onclick=()=>{AT=t.id;rTabs();rAll();};
+    c.appendChild(b);
+  });
+}
+
+function rAll(){
+  const t=TD().find(x=>x.id===AT),d=TS()[AT];
+  document.getElementById('repName').value=d.rn||'';
+  document.getElementById('xPer').textContent=t.p;
+  document.getElementById('xSub').textContent=t.s;
+  document.getElementById('xDue').textContent=t.d;
+  document.getElementById('tTitle').textContent=t.l+' '+AY;
+  document.getElementById('f2').value=d.dr||'';
+  _prev.s1=pm(document.getElementById('s1').textContent);
+  _prev.s4=pm(document.getElementById('s4').textContent);
+  _prev.f0=pm(document.getElementById('f0').textContent);
+  rTable();
+}
+
+function rTable(){
+  const tb=document.getElementById('tbd');tb.innerHTML='';
+  const rows=TS()[AT].rows;const turbo=isTurboActive();
+  const tkR=turboKey(),tiR=turboActivated[tkR];
+  rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');const isRef=r.tp==='REFUND';
+    const ca=pm(r.ca),co=pp(r.cm);const isAuto=r.auto,lk='';
+    // Crossing row detection for this render
+    const isCrossingRow=tiR?.active&&tiR?.crossing?.rowId===r.id;
+    let comm=isRef?-(ca*co):(ca*co);let turboBonus=0;
+    if(isCrossingRow&&!isRef&&TURBO_AUTO_TYPES.has(r.tp)){turboBonus=(tiR.crossing.overage||0)*0.04;comm+=turboBonus;}
+    let cls='fi';if(isAuto)cls+=' auto-row';if(r.paid)cls+=' confirmed-row';
+    tr.className=cls;
+    const isTT=TURBO_AUTO_TYPES.has(r.tp);
+    const commIsTurbo=turbo&&isTT&&co>=TURBO_RATE;
+    const commIsCrossing=isCrossingRow&&turboBonus>0;
+    // Notes: show turbo crossing info if applicable
+    const displayNotes=isCrossingRow&&turboBonus>0
+      ?'\u26A1 Turbo: '+cur(tiR.crossing.overage)+' over threshold (+'+cur(turboBonus)+')'+(r.nt?' | '+r.nt:'')
+      :r.nt;
+    tr.innerHTML='<td class="rn">'+(i+1)+(isAuto?'<span class="auto-badge">auto</span>':'')+'</td>'+
+      '<td>'+mSel('tp',i,TYPES,r.tp,isAuto)+'</td>'+
+      '<td><input type="text" class="ci nm'+lk+'" placeholder="Dealer name..." value="'+esc(r.dl)+'" data-r="'+i+'" data-f="dl" oninput="upd(this)"></td>'+
+      '<td><input type="date" class="ci'+lk+'" value="'+(r.dt||'')+'" data-r="'+i+'" data-f="dt" onchange="upd(this)"></td>'+
+      '<td>'+mSel('pg',i,PROGS,r.pg,isAuto)+'</td>'+
+      '<td><input type="text" class="ci mo'+lk+'" placeholder="$0.00" value="'+esc(r.ca)+'" data-r="'+i+'" data-f="ca" oninput="upd(this)" onblur="fmtM(this)"></td>'+
+      '<td>'+mSel('cm',i,CMS,r.cm,isAuto,commIsTurbo||commIsCrossing)+'</td>'+
+      '<td>'+mSel('tm',i,TRMS,r.tm,isAuto)+'</td>'+
+      '<td><input type="text" class="ci cm mo'+(isRef?' neg':'')+(commIsTurbo||commIsCrossing?' turbo':'')+'" readonly value="'+(Math.abs(comm)>0?cur(comm):'')+'"></td>'+
+      '<td class="chk-wrap"><input type="checkbox" class="chk" data-r="'+i+'"'+(r.paid?' checked':'')+' onchange="onPaid(this)"></td>'+
+      '<td><input type="text" class="ci nt" placeholder="Notes..." value="'+esc(displayNotes)+'" data-r="'+i+'" data-f="nt" oninput="upd(this)"></td>'+
+      '<td><button class="db" onclick="delR('+i+')" title="Delete">&#x2715;</button></td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('rCnt').textContent=rows.length;
+  if(!_skipCalc)calc(false);
+}
+
+function mSel(f,ri,opts,cur,locked,turboHl){
+  const tcls=turboHl?' turbo-cm':'';
+  let h='<select class="ci'+tcls+'" data-r="'+ri+'" data-f="'+f+'" onchange="upd(this)">';
+  opts.forEach(o=>{h+='<option value="'+esc(o)+'"'+(o===cur?' selected':'')+'>'+(o===''?'\u2014':o)+'</option>';});
+  return h+'</select>';
+}
+
+// ─── PAYMENT CONFIRMED ───
+function onPaid(el){
+  const i=+el.dataset.r;const was=TS()[AT].rows[i].paid;const now=el.checked;
+  TS()[AT].rows[i].paid=now;
+  // Detect threshold crossing whenever paid status changes
+  detectThresholdCrossing();
+  if(isTurboActive())applyTurboRates();
+  const p1=pm(document.getElementById('s1').textContent),p4=pm(document.getElementById('s4').textContent),pf=pm(document.getElementById('f0').textContent);
+  if(now&&!was){playCoinChime();calc(true);_skipCalc=true;rTable();_skipCalc=false;}
+  else{calc(false);const nv=cqk();animC('s1',p1,nv.rn,false);animC('s4',p4,nv.bc,false);animC('f0',pf,nv.bc,false);_skipCalc=true;rTable();_skipCalc=false;}
+  rTabs();sv();
+}
+
+// ─── UPDATE ───
+function upd(el){
+  const r=+el.dataset.r,f=el.dataset.f,row=TS()[AT].rows[r];row[f]=el.value;
+  let needsRR=false;
+  // Re-detect threshold when cash or type changes
+  if(f==='ca'||f==='tp'){detectThresholdCrossing();if(isTurboActive()){applyTurboRates();needsRR=true;}}
+  if(!needsRR&&(f==='ca'||f==='cm'||f==='tp')){
+    const ca=pm(row.ca),co=pp(row.cm),isRef=row.tp==='REFUND',comm=isRef?-(ca*co):(ca*co);
+    const cc=el.closest('tr').querySelector('.cm');
+    if(cc){cc.value=Math.abs(comm)>0?cur(comm):'';cc.classList.toggle('neg',isRef&&comm<0);}
+  }
+  if(!row.auto){const isLink=row.tp==='SPLIT PAY 1/2'||row.tp==='NEW SALE (MONTHLY)';if(isLink)syncLinked(row,AT);else clearLinked(row.id);}
+  if(needsRR){calc(false);_skipCalc=true;rTable();_skipCalc=false;}else{calc(false);}
+  rTabs();sv();
+}
+
+function onMeta(v){TS()[AT].rn=v;sv();}
+function addRow(){TS()[AT].rows.push(br());rTable();rTabs();const ins=document.querySelectorAll('#tbd input.nm:not(.locked)');if(ins.length)ins[ins.length-1].focus();sv();}
+function clearTab(){if(!confirm('Clear all data on this tab?'))return;TS()[AT].rows=[];TS()[AT].dr='';for(let i=0;i<10;i++)TS()[AT].rows.push(br());document.getElementById('f2').value='';detectThresholdCrossing();rTable();rTabs();sv();}
+function delR(i){const row=TS()[AT].rows[i];if(!row.auto)clearLinked(row.id);TS()[AT].rows.splice(i,1);if(TS()[AT].rows.length===0)TS()[AT].rows.push(br());detectThresholdCrossing();if(isTurboActive())applyTurboRates();rTable();rTabs();sv();}
+
+// ─── CALCULATIONS ───
+function calc(doAnim){
+  const rows=TS()[AT].rows;let ent=0,recNew=0,unrecNew=0,revRec=0,baseComm=0;
+  const tk2=turboKey();const ti2=turboActivated[tk2];
+  rows.forEach(r=>{const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND';
+    let comm=isRef?-(ca*co):(ca*co);
+    // Add overage bonus for the threshold-crossing row
+    if(ti2?.active&&ti2?.crossing?.rowId===r.id&&!isRef&&TURBO_AUTO_TYPES.has(r.tp))comm+=(ti2.crossing.overage||0)*0.04;
+    if(r.dl&&r.dl.trim())ent++;const inc=!EXCL_NEW_CASH.has(r.tp);if(r.paid){if(inc)recNew+=ca;revRec+=ca;baseComm+=comm;}else{if(inc)unrecNew+=ca;}});
+  const te=calcTabTurbo(); // informational only — NOT added to tc
+  const tc=baseComm;
+  document.getElementById('s0').textContent=ent;
+  if(doAnim){animC('s1',_prev.s1,recNew,true);animC('s4',_prev.s4,tc,false);animC('f0',_prev.f0,tc,false);}
+  else{document.getElementById('s1').textContent=cur(recNew);document.getElementById('s4').textContent=cur(tc);document.getElementById('f0').textContent=cur(tc);}
+  _prev.s1=recNew;_prev.s4=tc;_prev.f0=tc;
+  document.getElementById('s2').textContent=cur(unrecNew);document.getElementById('s3').textContent=cur(revRec);
+  document.getElementById('s5').textContent=cur(te);document.getElementById('f1t').textContent=cur(te);
+  document.getElementById('f4').textContent=cur(revRec);document.getElementById('f5').textContent=cur(recNew);document.getElementById('f6').textContent=cur(unrecNew);
+  updateTurboState();calcF();
+}
+function calcF(){const c=_prev.s4||0,dr=pm(document.getElementById('f2').value);TS()[AT].dr=document.getElementById('f2').value;document.getElementById('f3').textContent=cur(c+dr);sv();}
+function fmtFI(el){const n=pm(el.value);if(n!==0)el.value=cur(n);}
+function fmtM(el){const n=pm(el.value);if(n>0){el.value=cur(n);TS()[AT].rows[+el.dataset.r][el.dataset.f]=el.value;}const row=TS()[AT].rows[+el.dataset.r];if(!row.auto&&(row.tp==='SPLIT PAY 1/2'||row.tp==='NEW SALE (MONTHLY)'))syncLinked(row,AT);detectThresholdCrossing();if(isTurboActive())applyTurboRates();calc(false);sv();}
+
+// ─── EXPORT ───
+function doExport(){
+  const t=TD().find(x=>x.id===AT),rows=TS()[AT].rows,nm=TS()[AT].rn||'Unknown';
+  let c='Commission Tracker - '+t.l+' '+AY+'\nRep,'+nm+'\nPeriod,'+t.p+'\nSubmitted,'+t.s+'\nComm Due,'+t.d+'\n\n';
+  c+='Set or Sale,Dealership,Date,Program Value,Cash Collected,Comms %,Agreement Term,Commission,Paid,Notes\n';
+  const tk2=turboKey();const ti2=turboActivated[tk2];
+  rows.forEach(r=>{if(!r.dl?.trim()&&!r.ca&&!r.tp)return;const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND';let comm=isRef?-(ca*co):(ca*co);
+    const isCR=ti2?.active&&ti2?.crossing?.rowId===r.id;
+    if(isCR&&!isRef&&TURBO_AUTO_TYPES.has(r.tp))comm+=(ti2.crossing.overage||0)*0.04;
+    c+='"'+r.tp+'","'+r.dl+'","'+r.dt+'","'+r.pg+'","'+r.ca+'","'+r.cm+'","'+r.tm+'","'+cur(comm)+'","'+(r.paid?'Yes':'No')+'","'+r.nt+'"\n';});
+  c+='\nTotal Commission,'+document.getElementById('f0').textContent+'\nTurbo Additional,'+document.getElementById('f1t').textContent+'\n';
+  c+='Draw Adjustments,'+(TS()[AT].dr||'$0.00')+'\nTOTAL,'+document.getElementById('f3').textContent+',USD\n\n';
+  c+='Total Revenue Recognized,'+document.getElementById('f4').textContent+'\nRecognized New Cash,'+document.getElementById('f5').textContent+'\nUnrecognized New Cash,'+document.getElementById('f6').textContent+'\n';
+  const mtd=calcMTD();c+='MTD Recognized New Cash,'+cur(mtd.recNew)+'\nMTD Revenue,'+cur(mtd.revRec)+'\nMTD Turbo Additional,'+cur(calcMTDTurbo())+'\nMTD Total Commissions,'+cur(calcMTDCommissions())+'\n';
+  const bl=new Blob([c],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='comm_'+t.l.replace(/\s+/g,'_').toLowerCase()+'_'+AY+'_'+(nm.replace(/\s+/g,'_')||'rep')+'.csv';a.click();
+}
+
+// ─── UTILS ───
+function pm(s){if(!s)return 0;return parseFloat(String(s).replace(/[^0-9.\-]/g,''))||0;}
+function pp(s){if(!s)return 0;const n=parseFloat(String(s).replace(/[^0-9.\-]/g,''));if(String(s).includes('%'))return n/100;return n>1?n/100:n||0;}
+function cur(n){const a=Math.abs(n);const f='$'+a.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');return n<0?'-'+f:f;}
+function esc(s){if(!s)return '';const d=document.createElement('div');d.textContent=s;return d.innerHTML.replace(/"/g,'&quot;');}
+
 </script>
 </body>
 </html>
