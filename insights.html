@@ -167,6 +167,13 @@ tbody td.b{color:var(--blue);}
 
 @media(max-width:768px){.top-stats{grid-template-columns:repeat(3,1fr);}.metrics{grid-template-columns:repeat(2,1fr);}.two-col{grid-template-columns:1fr;}.funnel{flex-direction:column;}.funnel-arrow{transform:rotate(90deg);}}
 @media(max-width:500px){.top-stats{grid-template-columns:repeat(2,1fr);}.metrics{grid-template-columns:1fr;}}
+
+/* EOD Alert Banner */
+.eod-alert{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(249,115,22,.08);border-bottom:1px solid rgba(249,115,22,.25);}
+.eod-alert-icon{font-size:18px;margin-right:10px;}
+.eod-alert-text{font-size:12px;font-weight:600;color:var(--orange);}
+.eod-alert-names{font-size:12px;font-weight:700;color:var(--t1);margin-left:6px;}
+.eod-alert-time{font-family:var(--fm);font-size:10px;color:var(--t5);margin-left:auto;padding-left:16px;}
 </style>
 </head>
 <body>
@@ -226,6 +233,7 @@ tbody td.b{color:var(--blue);}
   </div>
 </div>
 
+<div id="eodAlertBar"></div>
 <div id="topStatsBar" class="top-stats"></div>
 <div id="secTabs" class="sec-tabs"></div>
 <div class="main" id="mainContent"></div>
@@ -358,8 +366,39 @@ function calcType(evts,type){
 function setTab(t){_activeTab=t;renderTabs();renderMain();}
 function isSDRView(){return document.getElementById('roleFilter').value==='Setter';}
 
+// ─── ADMIN EOD ALERT ───
+async function checkEodAlert(){
+  const el=document.getElementById('eodAlertBar');if(!el)return;
+  el.innerHTML='';
+  // Only for admins
+  if(!_isAdmin)return;
+  // Check if it's past 4:00 PM Pacific
+  const nowPacific=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'}));
+  if(nowPacific.getHours()<16)return;
+  // Get today's date in YYYY-MM-DD
+  const today=fmtDate(nowPacific);
+  // Fetch today's EOD reports (separate from filtered data)
+  try{
+    const{data:todayEods}=await _sb.from('eod_reports').select('user_id').eq('date',today);
+    const submittedIds=new Set((todayEods||[]).map(r=>r.user_id));
+    // Find team members who haven't submitted (exclude admins from the missing list — they're managers)
+    const missing=_profiles.filter(p=>!p.isAdmin&&!submittedIds.has(p.id));
+    if(!missing.length)return;
+    const names=missing.map(p=>p.name).join(', ');
+    const timeStr=nowPacific.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Los_Angeles'});
+    el.innerHTML='<div class="eod-alert">'+
+      '<div style="display:flex;align-items:center">'+
+        '<span class="eod-alert-icon">⚠️</span>'+
+        '<span class="eod-alert-text">Missing EOD Reports:</span>'+
+        '<span class="eod-alert-names">'+esc(names)+'</span>'+
+      '</div>'+
+      '<span class="eod-alert-time">As of '+timeStr+' PT</span>'+
+    '</div>';
+  }catch(e){console.warn('EOD alert check failed:',e);}
+}
+
 // ─── RENDER ───
-function renderAll(){renderTopStats();renderTabs();renderMain();}
+function renderAll(){renderTopStats();renderTabs();renderMain();checkEodAlert();}
 
 function renderTopStats(){
   const comm=calcComm(fCommRows());const evts=fEvts();
