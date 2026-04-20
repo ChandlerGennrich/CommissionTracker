@@ -130,6 +130,23 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
 @keyframes fi{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
 .fi{animation:fi .15s ease-out;}
 
+/* ─── PENDING APPROVAL ─── */
+.pending-approval{animation:pendingPulse 2s ease-in-out infinite!important;}
+@keyframes pendingPulse{0%,100%{box-shadow:inset 0 0 0 1px var(--red);}50%{box-shadow:inset 0 0 0 1px transparent;}}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;}
+.cm-custom-wrap{display:flex;align-items:center;gap:2px;}
+.cm-custom-wrap.pending-approval{padding:1px;}
+.cm-custom-input{font-family:var(--fm);font-size:11px;background:transparent;border:1px solid var(--brd);color:var(--t1);padding:4px;width:58px;text-align:right;}
+.cm-custom-input:focus{outline:none;border-color:var(--acc);background:var(--bgI);}
+.cm-custom-x{border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:10px;padding:0 2px;font-family:var(--fb);line-height:1;}
+.cm-custom-x:hover{color:var(--red);}
+.nt-wrap{display:flex;align-items:center;gap:4px;width:100%;}
+.nt-wrap .ci.nt{flex:1;min-width:0;}
+.chk-appr{width:14px;height:14px;appearance:none;-webkit-appearance:none;background:var(--bgI);border:2px solid rgba(224,64,64,.4);cursor:pointer;position:relative;transition:all .15s;flex-shrink:0;}
+.chk-appr:checked{background:var(--acc);border-color:var(--acc);}
+.chk-appr:checked::after{content:'\2713';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:700;color:#000;line-height:1;}
+.chk-appr:hover{border-color:var(--red);}
+
 /* ─── LOGIN SCREEN ─── */
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg0);padding:20px;}
 .login-box{width:100%;max-width:380px;background:var(--bg1);border:1px solid var(--brd);padding:36px 32px 32px;}
@@ -223,7 +240,7 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
   </div>
 </div>
 
-<!-- ─── ADMIN DASHBOARD (hidden until admin auth) ─── -->
+<!-- ─── ADMIN DASHBOARD ─── -->
 <div id="admin-screen" style="display:none" class="admin-wrap">
   <div class="admin-hdr">
     <div class="admin-hdr-l">
@@ -248,7 +265,7 @@ select.ci.turbo-cm{color:var(--orange)!important;font-weight:700;}
   </div>
 </div>
 
-<!-- ─── APP (hidden until auth) ─── -->
+<!-- ─── APP ─── -->
 <div id="app" style="display:none">
 
 <div class="viewing-banner" id="viewingBanner">
@@ -370,6 +387,7 @@ const YEARS=[2026,2027,2028,2029,2030];
 const TYPES=['','CLOSED SET (SDR)','NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2','SPLIT PAY 2/2','UPSELL','RECURRING PAYMENT','RENEWAL','REFUND'];
 const PROGS=['','11,098','14,982','26,635'];
 const CMS=['','3.00%','4.00%','10.00%','14.00%'];
+const CMS_OTHER='Other';
 const TRMS=['','4 Month','6 Month','12 Month','Custom (Needs Approval)'];
 const EXCL_NEW_CASH=new Set(['REFUND','SPLIT PAY 2/2','RECURRING PAYMENT','RENEWAL']);
 const TURBO_AUTO_TYPES=new Set(['NEW SALE (PIF)','NEW SALE (MONTHLY)','SPLIT PAY 1/2']);
@@ -396,12 +414,11 @@ let ALL_TD={};
 YEARS.forEach(y=>{ALL_TD[y]=genTD(y);});
 
 let AY=2026;let AT='j1';let S={};
-// turboActivated: { "2026_jan": { active: bool, crossing: { tabId, rowId, overage, cumulAtCross, timestamp } | null } }
 let turboActivated={};
 let _uid=Date.now();let _prev={s1:0,s4:0,f0:0};let _skipCalc=false;
 
 function nid(){return 'r'+(++_uid);}
-function br(){return{id:nid(),tp:'',dl:'',dt:'',pg:'',ca:'',cm:'',tm:'',nt:'',src:'',auto:false,paid:false};}
+function br(){return{id:nid(),tp:'',dl:'',dt:'',pg:'',ca:'',cm:'',tm:'',nt:'',src:'',auto:false,paid:false,cmCustom:false,cmApproved:false};}
 function TD(){return ALL_TD[AY];}
 function TS(){return S[AY];}
 
@@ -412,7 +429,7 @@ function ensureYear(yr){
   ALL_TD[yr].forEach(t=>{
     if(!S[yr][t.id])S[yr][t.id]={rows:[],rn:'',dr:''};
     if(S[yr][t.id].rows.length===0)for(let i=0;i<10;i++)S[yr][t.id].rows.push(br());
-    S[yr][t.id].rows.forEach(r=>{if(!r.id)r.id=nid();if(r.paid===undefined)r.paid=false;});
+    S[yr][t.id].rows.forEach(r=>{if(!r.id)r.id=nid();if(r.paid===undefined)r.paid=false;if(r.cmCustom===undefined)r.cmCustom=false;if(r.cmApproved===undefined)r.cmApproved=false;});
   });
 }
 
@@ -448,7 +465,7 @@ function genLinked(row,tabId){
     const fd=addDays(row.dt,30),loc=dateToTabGlobal(fd);
     if(loc){
       ensureYear(loc.yr);
-      S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'SPLIT PAY 2/2',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:'Auto \u2014 Split 2/2 from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
+      S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'SPLIT PAY 2/2',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:(row.nt?row.nt+' | ':'')+'Auto \u2014 Split 2/2 from '+tab.l+' '+AY,src:row.id,auto:true,paid:false,cmCustom:false,cmApproved:false});
     }
   } else if(row.tp==='NEW SALE (MONTHLY)'){
     const mo=termMo(row.tm);if(mo<2)return;
@@ -456,7 +473,7 @@ function genLinked(row,tabId){
       const fd=addDays(row.dt,30*i),loc=dateToTabGlobal(fd);
       if(loc){
         ensureYear(loc.yr);
-        S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'RECURRING PAYMENT',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:'Auto \u2014 Recurring '+(i+1)+'/'+mo+' from '+tab.l+' '+AY,src:row.id,auto:true,paid:false});
+        S[loc.yr][loc.tid].rows.unshift({id:nid(),tp:'RECURRING PAYMENT',dl:row.dl,dt:fd,pg:row.pg,ca:row.ca,cm:row.cm,tm:row.tm,nt:(row.nt?row.nt+' | ':'')+'Auto \u2014 Recurring '+(i+1)+'/'+mo+' from '+tab.l+' '+AY,src:row.id,auto:true,paid:false,cmCustom:false,cmApproved:false});
       }
     }
   }
@@ -474,8 +491,6 @@ function calcMTD(){
 // TURBO SYSTEM V2 — Threshold-aware, toggle on/off, partial split
 // ═══════════════════════════════════════════════════════════════
 
-// Detect which row crosses the $100k threshold (if any)
-// Scans all paid new-cash rows in the month in display order
 function detectThresholdCrossing(){
   const tk=turboKey();const moTabs=getMonthTabs();
   let cumul=0,crossingInfo=null;
@@ -504,34 +519,22 @@ function detectThresholdCrossing(){
   svTurbo();
 }
 
-// Migrate old turbo format (boolean) to new format ({active, crossing})
-// and detect threshold crossings for all active months
 function migrateTurboFormat(){
   const keys=Object.keys(turboActivated);
   let needsMigration=false;
   keys.forEach(tk=>{
     const val=turboActivated[tk];
-    if(typeof val==='boolean'){
-      turboActivated[tk]={active:val,crossing:null};
-      needsMigration=true;
-    } else if(val&&typeof val==='object'&&val.active===undefined){
-      turboActivated[tk]={active:false,crossing:null};
-      needsMigration=true;
-    }
+    if(typeof val==='boolean'){turboActivated[tk]={active:val,crossing:null};needsMigration=true;}
+    else if(val&&typeof val==='object'&&val.active===undefined){turboActivated[tk]={active:false,crossing:null};needsMigration=true;}
   });
-  // Detect threshold crossings for all active turbo months
   const savedAY=AY,savedAT=AT;
   Object.keys(turboActivated).forEach(tk=>{
-    const ti=turboActivated[tk];
-    if(!ti?.active)return;
-    const parts=tk.split('_');
-    const yr=parseInt(parts[0]);const moKey=parts[1];
+    const ti=turboActivated[tk];if(!ti?.active)return;
+    const parts=tk.split('_');const yr=parseInt(parts[0]);const moKey=parts[1];
     if(!yr||!moKey)return;
-    const allTabs=ALL_TD[yr]||[];
-    const monthTab=allTabs.find(t=>t.mo===moKey);
+    const allTabs=ALL_TD[yr]||[];const monthTab=allTabs.find(t=>t.mo===moKey);
     if(!monthTab)return;
-    AY=yr;AT=monthTab.id;
-    ensureYear(yr);
+    AY=yr;AT=monthTab.id;ensureYear(yr);
     detectThresholdCrossing();
     if(turboActivated[tk]?.active&&turboActivated[tk]?.crossing)applyTurboRates();
   });
@@ -539,8 +542,6 @@ function migrateTurboFormat(){
   if(needsMigration||Object.keys(turboActivated).some(tk=>turboActivated[tk]?.active))svTurbo();
 }
 
-// Apply 14% to all applicable rows AFTER the crossing row
-// The crossing row itself stays at 10% (overage bonus added separately in calc)
 function applyTurboRates(){
   const tk=turboKey();const ti=turboActivated[tk];
   if(!ti?.active||!ti?.crossing)return;
@@ -552,28 +553,25 @@ function applyTurboRates(){
         if(TURBO_AUTO_TYPES.has(r.tp))r.cm='10.00%';
         pastCrossing=true;continue;
       }
-      if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp)&&r.paid)r.cm='14.00%';
+      if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp)&&r.paid&&!r.cmCustom)r.cm='14.00%';
     }
   }
 }
 
-// Revert all 14% turbo rates back to 10%
 function resetTurboComms(){
   const moTabs=getMonthTabs();
   moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{
-    if(TURBO_AUTO_TYPES.has(r.tp)&&r.cm==='14.00%')r.cm='10.00%';
+    if(TURBO_AUTO_TYPES.has(r.tp)&&r.cm==='14.00%'&&!r.cmCustom)r.cm='10.00%';
   });});
 }
 
-// Turbo additional: informational display of the extra 4% earned
-// This is NOT added to Total Commission (already baked into row commissions)
 function calcTabTurbo(){
   const tk=turboKey();const ti=turboActivated[tk];
   if(!ti?.active||!ti?.crossing)return 0;
   const rows=TS()[AT].rows;let extra=0,pastCrossing=false;
   const crossHere=ti.crossing.tabId===AT;
   if(!crossHere){const mt=getMonthTabs();if(mt.indexOf(AT)>mt.indexOf(ti.crossing.tabId))pastCrossing=true;else return 0;}
-  rows.forEach(r=>{if(!r.paid)return;
+  rows.forEach(r=>{if(!r.paid)return;if(r.cmCustom&&!r.cmApproved)return;
     if(crossHere&&r.id===ti.crossing.rowId){if(TURBO_AUTO_TYPES.has(r.tp))extra+=(ti.crossing.overage||0)*0.04;pastCrossing=true;return;}
     if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp))extra+=pm(r.ca)*0.04;
   });
@@ -584,7 +582,7 @@ function calcMTDTurbo(){
   const tk=turboKey();const ti=turboActivated[tk];
   if(!ti?.active||!ti?.crossing)return 0;
   const moTabs=getMonthTabs();let extra=0,pastCrossing=false;
-  for(const tid of moTabs){(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;
+  for(const tid of moTabs){(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;if(r.cmCustom&&!r.cmApproved)return;
     if(r.id===ti.crossing.rowId){if(TURBO_AUTO_TYPES.has(r.tp))extra+=(ti.crossing.overage||0)*0.04;pastCrossing=true;return;}
     if(pastCrossing&&TURBO_AUTO_TYPES.has(r.tp))extra+=pm(r.ca)*0.04;
   });}
@@ -593,7 +591,7 @@ function calcMTDTurbo(){
 
 function calcMTDCommissions(){
   const moTabs=getMonthTabs();const tk=turboKey();const ti=turboActivated[tk];let bc=0;
-  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);
+  moTabs.forEach(tid=>{(TS()[tid]?.rows||[]).forEach(r=>{if(!r.paid)return;if(r.cmCustom&&!r.cmApproved)return;const ca=pm(r.ca),co=pp(r.cm);
     let comm=r.tp==='REFUND'?-(ca*co):(ca*co);
     if(ti?.active&&ti?.crossing?.rowId===r.id&&r.tp!=='REFUND')comm+=(ti.crossing.overage||0)*0.04;
     bc+=comm;});});
@@ -606,7 +604,6 @@ function updateTurboState(){
   const mtd=calcMTD();const tk=turboKey();
   const btn=document.getElementById('turboBtn'),txt=document.getElementById('turboText');
   const gap=TURBO_THRESHOLD-mtd.recNew;
-  // Normalize old boolean format
   if(typeof turboActivated[tk]==='boolean')turboActivated[tk]={active:turboActivated[tk],crossing:null};
   const ti=turboActivated[tk]||{};
   document.getElementById('mtdNewCash').textContent=cur(mtd.recNew);
@@ -626,29 +623,27 @@ function updateTurboState(){
 function onTurboClick(){
   const tk=turboKey();const mtd=calcMTD();
   if(mtd.recNew<TURBO_THRESHOLD)return;
-  // Ensure new format (handles old boolean format too)
   if(!turboActivated[tk]||typeof turboActivated[tk]==='boolean'){
     turboActivated[tk]={active:!!turboActivated[tk],crossing:null};
   }
   const ti=turboActivated[tk];
   if(ti.active){
-    // UNDO — deactivate turbo, revert all to 10%
     ti.active=false;ti.crossing=null;resetTurboComms();svTurbo();
     calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
   } else {
-    // ACTIVATE — detect crossing, apply 14% to post-crossing rows
     ti.active=true;detectThresholdCrossing();applyTurboRates();playTurboChime();svTurbo();
     calc(false);_skipCalc=true;rTable();_skipCalc=false;sv();
   }
 }
 
-// Quick calc for animation (includes overage bonus)
 function cqk(){
   const rows=TS()[AT].rows;const tk=turboKey();const ti=turboActivated[tk];let rn=0,bc=0;
   rows.forEach(r=>{if(!r.paid)return;const ca=pm(r.ca),co=pp(r.cm);
+    if(!EXCL_NEW_CASH.has(r.tp))rn+=ca;
+    if(r.cmCustom&&!r.cmApproved)return;
     let comm=r.tp==='REFUND'?-(ca*co):(ca*co);
     if(ti?.active&&ti?.crossing?.rowId===r.id&&r.tp!=='REFUND')comm+=(ti.crossing.overage||0)*0.04;
-    if(!EXCL_NEW_CASH.has(r.tp))rn+=ca;bc+=comm;});
+    bc+=comm;});
   return{rn,bc,te:calcTabTurbo()};
 }
 
@@ -684,8 +679,7 @@ async function doLogin(){
   const errEl = document.getElementById('loginErr');
   const msgEl = document.getElementById('loginMsg');
   const btn = document.getElementById('loginBtn');
-  errEl.style.display = 'none';
-  msgEl.style.display = 'none';
+  errEl.style.display = 'none';msgEl.style.display = 'none';
   if(!email || !pass){ errEl.textContent='Email and password required.'; errEl.style.display='block'; return; }
   if(_isSignup && pass.length < 6){ errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
   btn.disabled = true;
@@ -696,11 +690,9 @@ async function doLogin(){
       result = await _sb.auth.signUp({ email, password: pass });
       if(result.error) throw result.error;
       if(result.data?.user?.identities?.length === 0){
-        errEl.textContent = 'An account with this email already exists.';
-        errEl.style.display = 'block';
+        errEl.textContent = 'An account with this email already exists.';errEl.style.display = 'block';
       } else {
-        msgEl.textContent = 'Account created! You can now sign in.';
-        msgEl.style.display = 'block';
+        msgEl.textContent = 'Account created! You can now sign in.';msgEl.style.display = 'block';
         _isSignup = false;
         document.getElementById('loginTitle').textContent = 'Sign In';
         document.getElementById('loginBtn').textContent = 'Sign In';
@@ -709,15 +701,10 @@ async function doLogin(){
     } else {
       result = await _sb.auth.signInWithPassword({ email, password: pass });
       if(result.error) throw result.error;
-      _currentUser = result.data.user;
-      await enterApp();
+      _currentUser = result.data.user;await enterApp();
     }
-  } catch(e){
-    errEl.textContent = e.message || 'Authentication failed.';
-    errEl.style.display = 'block';
-  }
-  btn.disabled = false;
-  btn.textContent = _isSignup ? 'Create Account' : 'Sign In';
+  } catch(e){errEl.textContent = e.message || 'Authentication failed.';errEl.style.display = 'block';}
+  btn.disabled = false;btn.textContent = _isSignup ? 'Create Account' : 'Sign In';
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -776,16 +763,14 @@ async function loadAdminDashboard(){
   document.getElementById('adStatUsers').textContent = profiles.length;
   document.getElementById('adStatAdmins').textContent = admins;
   document.getElementById('adStatReps').textContent = reps;
-  const list = document.getElementById('adminUserList');
-  list.innerHTML = '';
+  const list = document.getElementById('adminUserList');list.innerHTML = '';
   profiles.forEach(p => {
     const initials = (p.email||'?').slice(0,2).toUpperCase();
     const comm = commMap[p.id];
     const hasData = comm && comm.state && Object.keys(comm.state).length > 0;
     const updated = comm?.updated_at ? new Date(comm.updated_at).toLocaleDateString() : 'Never';
     const isMe = p.id === _currentUser.id;
-    const div = document.createElement('div');
-    div.className = 'admin-user';
+    const div = document.createElement('div');div.className = 'admin-user';
     div.innerHTML =
       '<div class="admin-user-left">'+
         '<div class="admin-user-avatar">'+initials+'</div>'+
@@ -848,7 +833,7 @@ async function saveToSupabase(){
   if(saveId !== _currentUser.id && !_isAdmin) return;
   try {
     await _sb.from('commission_data').upsert({
-   user_id: saveId, state: S, turbo: turboActivated, updated_at: new Date().toISOString()
+      user_id: saveId, state: S, turbo: turboActivated, updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
   } catch(e){ console.warn('Save error:', e); }
 }
@@ -864,8 +849,7 @@ function init(){
   AY=2026;AT='j1';
   YEARS.forEach(y=>ensureYear(y));
   migrateTurboFormat();
-  const sel=document.getElementById('yrSel');
-  sel.innerHTML='';
+  const sel=document.getElementById('yrSel');sel.innerHTML='';
   YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
   sel.value=AY;
   rTabs();rAll();
@@ -896,6 +880,77 @@ function rAll(){
   rTable();
 }
 
+// ─── CUSTOM COMMS % CELL ───
+function cmCell(i,r,isAuto,turboHl){
+  const isPending=r.cmCustom&&!r.cmApproved;
+  const pendCls=isPending?' pending-approval':'';
+  if(r.cmCustom){
+    const tcls=turboHl?' style="color:var(--orange);font-weight:700"':'';
+    return '<div class="cm-custom-wrap'+pendCls+'">'+
+      '<input type="text" class="cm-custom-input"'+tcls+' value="'+esc(r.cm)+'" data-r="'+i+'" '+
+      'onblur="onCmBlur(this)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
+      (isAuto?'':'<button class="cm-custom-x" onclick="clearCustomCm('+i+')" title="Use standard">&times;</button>')+
+      '</div>';
+  }
+  const opts=[...CMS,CMS_OTHER];
+  const tcls=turboHl?' turbo-cm':'';
+  let h='<select class="ci'+tcls+pendCls+(isAuto?' locked':'')+'" data-r="'+i+'" data-f="cm" onchange="onCmChange(this,'+i+')"'+(isAuto?' disabled':'')+'>';
+  opts.forEach(o=>{h+='<option value="'+esc(o)+'"'+(o===r.cm?' selected':'')+'>'+(o===''?'\u2014':o)+'</option>';});
+  return h+'</select>';
+}
+
+// ─── NOTES CELL WITH APPROVAL ───
+function ntCell(i,r,displayNotes){
+  const isPending=r.cmCustom&&!r.cmApproved;
+  const pendCls=isPending?' pending-approval':'';
+  let h='<div class="nt-wrap"><input type="text" class="ci nt'+pendCls+'" placeholder="Notes..." value="'+esc(displayNotes)+'" data-r="'+i+'" data-f="nt" oninput="upd(this)">';
+  if(r.cmCustom&&_isAdmin){
+    h+='<input type="checkbox" class="chk-appr" data-r="'+i+'" title="Approve custom commission"'+(r.cmApproved?' checked':'')+' onchange="onApprove(this)">';
+  }
+  h+='</div>';
+  return h;
+}
+
+function onCmChange(el,idx){
+  const row=TS()[AT].rows[idx];
+  if(el.value===CMS_OTHER){
+    row.cm='';row.cmCustom=true;row.cmApproved=false;
+    calc(false);_skipCalc=true;rTable();_skipCalc=false;
+    setTimeout(()=>{const inputs=document.querySelectorAll('.cm-custom-input');
+      inputs.forEach(inp=>{if(+inp.dataset.r===idx)inp.focus();});},50);
+    rTabs();sv();
+  } else {
+    row.cm=el.value;row.cmCustom=false;row.cmApproved=false;
+    // Inline commission update
+    const ca=pm(row.ca),co=pp(row.cm),isRef=row.tp==='REFUND',comm=isRef?-(ca*co):(ca*co);
+    const cc=el.closest('tr')?.querySelector('.cm');
+    if(cc){cc.value=Math.abs(comm)>0?cur(comm):'';cc.classList.toggle('neg',isRef&&comm<0);}
+    calc(false);rTabs();sv();
+  }
+}
+
+function onCmBlur(el){
+  const idx=+el.dataset.r;const row=TS()[AT].rows[idx];
+  let val=el.value.trim().replace('%','');
+  const num=parseFloat(val);
+  if(!isNaN(num)&&num>0){row.cm=num.toFixed(2)+'%';}
+  else{row.cm='0.00%';}
+  row.cmCustom=true;
+  calc(false);_skipCalc=true;rTable();_skipCalc=false;rTabs();sv();
+}
+
+function clearCustomCm(idx){
+  const row=TS()[AT].rows[idx];
+  row.cm='';row.cmCustom=false;row.cmApproved=false;
+  calc(false);_skipCalc=true;rTable();_skipCalc=false;rTabs();sv();
+}
+
+function onApprove(el){
+  const idx=+el.dataset.r;const row=TS()[AT].rows[idx];
+  row.cmApproved=el.checked;
+  calc(false);_skipCalc=true;rTable();_skipCalc=false;rTabs();sv();
+}
+
 function rTable(){
   const tb=document.getElementById('tbd');tb.innerHTML='';
   const rows=TS()[AT].rows;const turbo=isTurboActive();
@@ -903,16 +958,16 @@ function rTable(){
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');const isRef=r.tp==='REFUND';
     const ca=pm(r.ca),co=pp(r.cm);const isAuto=r.auto,lk='';
-    // Crossing row detection for this render
     const isCrossingRow=tiR?.active&&tiR?.crossing?.rowId===r.id;
     let comm=isRef?-(ca*co):(ca*co);let turboBonus=0;
     if(isCrossingRow&&!isRef&&TURBO_AUTO_TYPES.has(r.tp)){turboBonus=(tiR.crossing.overage||0)*0.04;comm+=turboBonus;}
+    // Gate display: show commission value but dim if pending approval
+    const commPending=r.cmCustom&&!r.cmApproved;
     let cls='fi';if(isAuto)cls+=' auto-row';if(r.paid)cls+=' confirmed-row';
     tr.className=cls;
     const isTT=TURBO_AUTO_TYPES.has(r.tp);
     const commIsTurbo=turbo&&isTT&&co>=TURBO_RATE;
     const commIsCrossing=isCrossingRow&&turboBonus>0;
-    // Notes: show turbo crossing info if applicable
     const displayNotes=isCrossingRow&&turboBonus>0
       ?'\u26A1 Turbo: '+cur(tiR.crossing.overage)+' over threshold (+'+cur(turboBonus)+')'+(r.nt?' | '+r.nt:'')
       :r.nt;
@@ -922,11 +977,11 @@ function rTable(){
       '<td><input type="date" class="ci'+lk+'" value="'+(r.dt||'')+'" data-r="'+i+'" data-f="dt" onchange="upd(this)"></td>'+
       '<td>'+mSel('pg',i,PROGS,r.pg,isAuto)+'</td>'+
       '<td><input type="text" class="ci mo'+lk+'" placeholder="$0.00" value="'+esc(r.ca)+'" data-r="'+i+'" data-f="ca" oninput="upd(this)" onblur="fmtM(this)"></td>'+
-      '<td>'+mSel('cm',i,CMS,r.cm,isAuto,commIsTurbo||commIsCrossing)+'</td>'+
+      '<td>'+cmCell(i,r,isAuto,commIsTurbo||commIsCrossing)+'</td>'+
       '<td>'+mSel('tm',i,TRMS,r.tm,isAuto)+'</td>'+
-      '<td><input type="text" class="ci cm mo'+(isRef?' neg':'')+(commIsTurbo||commIsCrossing?' turbo':'')+'" readonly value="'+(Math.abs(comm)>0?cur(comm):'')+'"></td>'+
+      '<td><input type="text" class="ci cm mo'+(isRef?' neg':'')+(commIsTurbo||commIsCrossing?' turbo':'')+'" readonly value="'+(Math.abs(comm)>0?cur(comm):'')+'"'+(commPending?' style="opacity:.4"':'')+'></td>'+
       '<td class="chk-wrap"><input type="checkbox" class="chk" data-r="'+i+'"'+(r.paid?' checked':'')+' onchange="onPaid(this)"></td>'+
-      '<td><input type="text" class="ci nt" placeholder="Notes..." value="'+esc(displayNotes)+'" data-r="'+i+'" data-f="nt" oninput="upd(this)"></td>'+
+      '<td>'+ntCell(i,r,displayNotes)+'</td>'+
       '<td><button class="db" onclick="delR('+i+')" title="Delete">&#x2715;</button></td>';
     tb.appendChild(tr);
   });
@@ -936,7 +991,7 @@ function rTable(){
 
 function mSel(f,ri,opts,cur,locked,turboHl){
   const tcls=turboHl?' turbo-cm':'';
-  let h='<select class="ci'+tcls+'" data-r="'+ri+'" data-f="'+f+'" onchange="upd(this)">';
+  let h='<select class="ci'+tcls+(locked?' locked':'')+'" data-r="'+ri+'" data-f="'+f+'"'+(locked?' disabled':'')+' onchange="upd(this)">';
   opts.forEach(o=>{h+='<option value="'+esc(o)+'"'+(o===cur?' selected':'')+'>'+(o===''?'\u2014':o)+'</option>';});
   return h+'</select>';
 }
@@ -945,7 +1000,6 @@ function mSel(f,ri,opts,cur,locked,turboHl){
 function onPaid(el){
   const i=+el.dataset.r;const was=TS()[AT].rows[i].paid;const now=el.checked;
   TS()[AT].rows[i].paid=now;
-  // Detect threshold crossing whenever paid status changes
   detectThresholdCrossing();
   if(isTurboActive())applyTurboRates();
   const p1=pm(document.getElementById('s1').textContent),p4=pm(document.getElementById('s4').textContent),pf=pm(document.getElementById('f0').textContent);
@@ -958,7 +1012,6 @@ function onPaid(el){
 function upd(el){
   const r=+el.dataset.r,f=el.dataset.f,row=TS()[AT].rows[r];row[f]=el.value;
   let needsRR=false;
-  // Re-detect threshold when cash or type changes
   if(f==='ca'||f==='tp'){detectThresholdCrossing();if(isTurboActive()){applyTurboRates();needsRR=true;}}
   if(!needsRR&&(f==='ca'||f==='cm'||f==='tp')){
     const ca=pm(row.ca),co=pp(row.cm),isRef=row.tp==='REFUND',comm=isRef?-(ca*co):(ca*co);
@@ -981,10 +1034,11 @@ function calc(doAnim){
   const tk2=turboKey();const ti2=turboActivated[tk2];
   rows.forEach(r=>{const ca=pm(r.ca),co=pp(r.cm),isRef=r.tp==='REFUND';
     let comm=isRef?-(ca*co):(ca*co);
-    // Add overage bonus for the threshold-crossing row
     if(ti2?.active&&ti2?.crossing?.rowId===r.id&&!isRef&&TURBO_AUTO_TYPES.has(r.tp))comm+=(ti2.crossing.overage||0)*0.04;
-    if(r.dl&&r.dl.trim())ent++;const inc=!EXCL_NEW_CASH.has(r.tp);if(r.paid){if(inc)recNew+=ca;revRec+=ca;baseComm+=comm;}else{if(inc)unrecNew+=ca;}});
-  const te=calcTabTurbo(); // informational only — NOT added to tc
+    if(r.dl&&r.dl.trim())ent++;const inc=!EXCL_NEW_CASH.has(r.tp);
+    if(r.paid){if(inc)recNew+=ca;revRec+=ca;if(!r.cmCustom||r.cmApproved)baseComm+=comm;}
+    else{if(inc)unrecNew+=ca;}});
+  const te=calcTabTurbo();
   const tc=baseComm;
   document.getElementById('s0').textContent=ent;
   if(doAnim){animC('s1',_prev.s1,recNew,true);animC('s4',_prev.s4,tc,false);animC('f0',_prev.f0,tc,false);}
