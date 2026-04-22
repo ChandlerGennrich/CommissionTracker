@@ -476,9 +476,9 @@ function clearLinked(srcId){
 function genLinked(row,tabId){
   if(!row.dt)return;
   const tab=TD().find(t=>t.id===tabId);
-  /* FIX: Use addMonths instead of addDays(30) to keep same day-of-month.
-     FIX: Auto entries get 10% unless source has a custom rate (cmCustom). */
-  const autoCm=row.cmCustom?row.cm:'10.00%';
+  /* FIX: Auto entries inherit source rate. Only exception: if source is at turbo-inflated
+     14% (not a custom rate), auto entries get 10% to prevent turbo bleed. */
+  const autoCm=(!row.cmCustom && row.cm==='14.00%')?'10.00%':row.cm;
   if(row.tp==='SPLIT PAY 1/2'){
     const fd=addMonths(row.dt,1),loc=dateToTabGlobal(fd);
     if(loc){
@@ -559,75 +559,80 @@ function migrateTurboFormat(){
   if(needsMigration||Object.keys(turboActivated).some(tk=>turboActivated[tk]?.active))svTurbo();
 }
 
-/* FIX: One-time data migration to correct dates (addDays→addMonths) and
-   commission rates (auto entries that inherited 14% turbo instead of 10%). */
+/* FIX: Versioned one-time data migration. Only runs once per version bump.
+   v1: Correct dates (addDays→addMonths), fix turbo 14% bleed on auto entries.
+   v2: George rate adjustment (14→13.5, 13→12.5). */
 function migrateLinkedData(){
+  const MIGRATE_VER=2;
+  if(S.__migrated>=MIGRATE_VER)return;
+  const fromVer=S.__migrated||0;
   let fixes=0;
   // Build row lookup across all years/tabs
   const rowById={};
   YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
     (S[yr][tid]?.rows||[]).forEach(r=>{rowById[r.id]={yr,tid,row:r};});
   });});
-  // Scan all auto entries
-  YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
-    (S[yr][tid]?.rows||[]).forEach(r=>{
-      if(!r.auto||!r.src||!r.dt)return;
-      const srcInfo=rowById[r.src];if(!srcInfo||!srcInfo.row.dt)return;
-      const src=srcInfo.row;
-      // Calculate correct date using addMonths
-      let expectedDate;
-      if(r.tp==='SPLIT PAY 2/2'){
-        expectedDate=addMonths(src.dt,1);
-      } else if(r.tp==='RECURRING PAYMENT'){
-        const m=r.nt?.match(/Recurring (\d+)\/(\d+)/);
-        if(m){expectedDate=addMonths(src.dt,parseInt(m[1])-1);}
-      }
-      // Fix date if wrong
-      if(expectedDate&&r.dt!==expectedDate){
-        const oldTab=tid;const newLoc=dateToTabGlobal(expectedDate);
-        if(newLoc&&(newLoc.yr!==yr||newLoc.tid!==tid)){
-          // Entry needs to MOVE to a different tab
-          S[yr][tid].rows=S[yr][tid].rows.filter(x=>x.id!==r.id);
-          ensureYear(newLoc.yr);
-          r.dt=expectedDate;
-          S[newLoc.yr][newLoc.tid].rows.unshift(r);
-          fixes++;
-          console.log('[Migration] Moved '+r.tp+' for "'+r.dl+'" from '+r.dt+' → '+expectedDate+' (tab '+oldTab+'→'+newLoc.tid+')');
-        } else if(newLoc){
-          console.log('[Migration] Fixed date for '+r.tp+' "'+r.dl+'": '+r.dt+' → '+expectedDate);
-          r.dt=expectedDate;fixes++;
+  // v1+: Fix dates on auto entries using addMonths
+  if(fromVer<1){
+    YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
+      (S[yr][tid]?.rows||[]).forEach(r=>{
+        if(!r.auto||!r.src||!r.dt)return;
+        const srcInfo=rowById[r.src];if(!srcInfo||!srcInfo.row.dt)return;
+        const src=srcInfo.row;
+        let expectedDate;
+        if(r.tp==='SPLIT PAY 2/2'){expectedDate=addMonths(src.dt,1);}
+        else if(r.tp==='RECURRING PAYMENT'){
+          const m=r.nt?.match(/Recurring (\d+)\/(\d+)/);
+          if(m){expectedDate=addMonths(src.dt,parseInt(m[1])-1);}
         }
-      }
-      // Fix commission rate: auto entries should be 10% unless source has custom rate
-      if(r.auto&&!src.cmCustom&&r.cm!=='10.00%'&&r.cm!==''){
-        console.log('[Migration] Fixed rate for '+r.tp+' "'+r.dl+'": '+r.cm+' → 10%');
-        r.cm='10.00%';fixes++;
-      }
-    });
-  });});
-  // George-specific rate migration: 14% → 13.5%, 13% → 12.5%
-  const gEmail=_viewingUserEmail||_currentUser?.email||'';
-  if(gEmail==='george@dealershipaccelerator.io'){
-    YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
-      (S[yr][tid]?.rows||[]).forEach(r=>{
-        if(r.auto)return; // auto entries handled above
-        if(r.cm==='14.00%'){console.log('[George] '+r.dl+': 14% → 13.5%');r.cm='13.50%';fixes++;}
-        else if(r.cm==='13.00%'){console.log('[George] '+r.dl+': 13% → 12.5%');r.cm='12.50%';fixes++;}
-      });
-    });});
-    // Re-sync linked entries so auto entries inherit corrected rates for custom, or 10% for standard
-    YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
-      (S[yr][tid]?.rows||[]).forEach(r=>{
-        if(r.auto)return;
-        if(r.tp==='SPLIT PAY 1/2'||r.tp==='NEW SALE (MONTHLY)'){
-          const savedAY2=AY,savedAT2=AT;AY=yr;AT=tid;
-          syncLinked(r,tid);
-          AY=savedAY2;AT=savedAT2;
+        // Fix date if wrong
+        if(expectedDate&&r.dt!==expectedDate){
+          const oldTab=tid;const newLoc=dateToTabGlobal(expectedDate);
+          if(newLoc&&(newLoc.yr!==yr||newLoc.tid!==tid)){
+            S[yr][tid].rows=S[yr][tid].rows.filter(x=>x.id!==r.id);
+            ensureYear(newLoc.yr);r.dt=expectedDate;
+            S[newLoc.yr][newLoc.tid].rows.unshift(r);fixes++;
+            console.log('[Migration v1] Moved '+r.tp+' "'+r.dl+'" → '+expectedDate+' (tab '+oldTab+'→'+newLoc.tid+')');
+          } else if(newLoc){
+            console.log('[Migration v1] Fixed date '+r.tp+' "'+r.dl+'": '+r.dt+' → '+expectedDate);
+            r.dt=expectedDate;fixes++;
+          }
+        }
+        // Only fix turbo 14% bleed on auto entries (not 3%, 4%, 12.5%, 13.5% etc)
+        if(r.auto&&!src.cmCustom&&r.cm==='14.00%'&&src.cm!=='14.00%'){
+          console.log('[Migration v1] Turbo bleed fix '+r.tp+' "'+r.dl+'": 14% → '+src.cm);
+          r.cm=src.cm||'10.00%';fixes++;
         }
       });
     });});
   }
-  if(fixes>0){console.log('[Migration] Fixed '+fixes+' issues. Saving...');sv();}
+  // v2: George-specific rate adjustment (14→13.5, 13→12.5)
+  if(fromVer<2){
+    const gEmail=_viewingUserEmail||_currentUser?.email||'';
+    if(gEmail==='george@dealershipaccelerator.io'){
+      YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
+        (S[yr][tid]?.rows||[]).forEach(r=>{
+          if(r.auto)return;
+          if(r.cm==='14.00%'){console.log('[Migration v2 George] '+r.dl+': 14% → 13.5%');r.cm='13.50%';fixes++;}
+          else if(r.cm==='13.00%'){console.log('[Migration v2 George] '+r.dl+': 13% → 12.5%');r.cm='12.50%';fixes++;}
+        });
+      });});
+      // Re-sync linked entries with corrected source rates
+      YEARS.forEach(yr=>{if(!S[yr])return;Object.keys(S[yr]).forEach(tid=>{
+        (S[yr][tid]?.rows||[]).forEach(r=>{
+          if(r.auto)return;
+          if(r.tp==='SPLIT PAY 1/2'||r.tp==='NEW SALE (MONTHLY)'){
+            const savedAY2=AY,savedAT2=AT;AY=yr;AT=tid;
+            syncLinked(r,tid);
+            AY=savedAY2;AT=savedAT2;
+          }
+        });
+      });});
+    }
+  }
+  S.__migrated=MIGRATE_VER;
+  if(fixes>0){console.log('[Migration] Fixed '+fixes+' issues. Saving...');}
+  sv();
 }
 
 function applyTurboRates(){
