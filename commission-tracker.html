@@ -184,7 +184,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:po
 .admin-hdr-r{display:flex;align-items:center;gap:8px;}
 .admin-body{max-width:900px;margin:0 auto;padding:24px;}
 .admin-section-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;}
-.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;}
 .admin-stat{background:var(--bg2);border:1px solid var(--brd);padding:14px 16px;}
 .admin-stat-label{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);font-weight:600;margin-bottom:4px;}
 .admin-stat-val{font-family:var(--fm);font-size:20px;font-weight:600;color:var(--t1);}
@@ -201,6 +201,33 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:po
 .admin-user-right{display:flex;align-items:center;gap:10px;}
 .admin-badge{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;background:rgba(240,150,10,.1);color:var(--orange);border:1px solid rgba(240,150,10,.2);}
 .admin-badge.rep{background:var(--accG);color:var(--acc);border-color:rgba(62,207,74,.2);}
+.admin-badge.sdr{background:rgba(100,149,237,.1);color:#6495ed;border-color:rgba(100,149,237,.2);}
+/* Invite Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-box{width:100%;max-width:420px;background:var(--bg1);border:1px solid var(--brd);padding:28px 24px 24px;}
+.modal-title{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px;}
+.modal-sub{font-size:10px;color:var(--t3);margin-bottom:18px;}
+.modal-label{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:5px;}
+.modal-input{width:100%;font-family:var(--fb);font-size:12px;background:var(--bgI);border:1px solid var(--brd);color:var(--t1);padding:9px 11px;margin-bottom:14px;transition:border-color .2s;}
+.modal-input:focus{outline:none;border-color:var(--acc);}
+.modal-input::placeholder{color:var(--t3);}
+.modal-select{width:100%;font-family:var(--fb);font-size:12px;background:var(--bgI);border:1px solid var(--brd);color:var(--t1);padding:9px 11px;margin-bottom:14px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:26px;}
+.modal-select:focus{outline:none;border-color:var(--acc);}
+.modal-select option{background:var(--bg2);color:var(--t1);}
+.modal-btns{display:flex;gap:8px;margin-top:4px;}
+.modal-btn-primary{flex:1;font-family:var(--fb);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:10px;border:1px solid var(--acc);background:var(--acc);color:#000;cursor:pointer;transition:all .2s;}
+.modal-btn-primary:hover{background:#4de058;box-shadow:0 0 14px rgba(62,207,74,.2);}
+.modal-btn-primary:disabled{opacity:.5;cursor:wait;}
+.modal-btn-cancel{flex:0;font-family:var(--fb);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:10px 16px;border:1px solid var(--brd);background:var(--bgI);color:var(--t2);cursor:pointer;transition:all .2s;}
+.modal-btn-cancel:hover{border-color:var(--red);color:var(--red);}
+.modal-err{font-size:10px;color:var(--red);background:var(--redD);border:1px solid rgba(224,64,64,.2);padding:7px 10px;margin-bottom:12px;display:none;}
+.modal-ok{font-size:10px;color:var(--acc);background:var(--accG);border:1px solid rgba(62,207,74,.2);padding:7px 10px;margin-bottom:12px;display:none;}
+.admin-role-sel{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border:1px solid var(--brd);background:var(--bgI);color:var(--t2);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4'%3E%3Cpath d='M0 0l3 4 3-4z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;padding-right:14px;transition:all .2s;}
+.admin-role-sel:hover{border-color:var(--acc);color:var(--acc);}
+.admin-role-sel option{background:var(--bg2);color:var(--t1);}
+.admin-invite-btn{font-family:var(--fb);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border:1px solid var(--acc);background:var(--acc);color:#000;cursor:pointer;transition:all .2s;}
+.admin-invite-btn:hover{background:#4de058;box-shadow:0 0 14px rgba(62,207,74,.2);}
 .admin-toggle-btn{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t3);cursor:pointer;transition:all .2s;}
 .admin-toggle-btn:hover{border-color:var(--orange);color:var(--orange);}
 .admin-view-btn{font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--brd);background:var(--bgI);color:var(--t2);cursor:pointer;transition:all .2s;}
@@ -211,7 +238,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:po
 .viewing-text b{color:var(--t1);}
 .btn-back{font-family:var(--fb);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(240,150,10,.3);background:rgba(240,150,10,.08);color:var(--orange);cursor:pointer;transition:all .2s;}
 .btn-back:hover{background:rgba(240,150,10,.15);border-color:var(--orange);}
-@media(max-width:700px){.admin-stats{grid-template-columns:1fr;}.admin-body{padding:16px;}.admin-user{flex-wrap:wrap;gap:8px;}}
+@media(max-width:700px){.admin-stats{grid-template-columns:repeat(2,1fr);}.admin-body{padding:16px;}.admin-user{flex-wrap:wrap;gap:8px;}}
 </style>
 </head>
 <body>
@@ -258,10 +285,36 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:po
     <div class="admin-stats">
       <div class="admin-stat"><div class="admin-stat-label">Total Users</div><div class="admin-stat-val" id="adStatUsers">0</div></div>
       <div class="admin-stat"><div class="admin-stat-label">Admins</div><div class="admin-stat-val" id="adStatAdmins">0</div></div>
-      <div class="admin-stat"><div class="admin-stat-label">Reps</div><div class="admin-stat-val g" id="adStatReps">0</div></div>
+      <div class="admin-stat"><div class="admin-stat-label">Sales Reps</div><div class="admin-stat-val g" id="adStatReps">0</div></div>
+      <div class="admin-stat"><div class="admin-stat-label">SDRs</div><div class="admin-stat-val" id="adStatSDRs" style="color:#6495ed">0</div></div>
     </div>
-    <div class="admin-section-title">All Users</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div class="admin-section-title" style="margin-bottom:0">All Users</div>
+      <button class="admin-invite-btn" onclick="showInviteModal()">+ Invite Staff</button>
+    </div>
     <div class="admin-user-list" id="adminUserList"></div>
+  </div>
+</div>
+
+<!-- Invite Staff Modal -->
+<div class="modal-overlay" id="inviteModal" onclick="if(event.target===this)closeInviteModal()">
+  <div class="modal-box">
+    <div class="modal-title">Invite New Staff Member</div>
+    <div class="modal-sub">They'll receive an email to set their password and access the tracker.</div>
+    <div class="modal-err" id="inviteErr"></div>
+    <div class="modal-ok" id="inviteOk"></div>
+    <label class="modal-label">Email Address</label>
+    <input type="email" class="modal-input" id="inviteEmail" placeholder="name@dealership.com" autocomplete="off" onkeydown="if(event.key==='Enter')doInviteStaff()">
+    <label class="modal-label">Role</label>
+    <select class="modal-select" id="inviteRole">
+      <option value="sales_rep">Sales Rep</option>
+      <option value="sdr">SDR</option>
+      <option value="admin">Admin</option>
+    </select>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeInviteModal()">Cancel</button>
+      <button class="modal-btn-primary" id="inviteBtn" onclick="doInviteStaff()">Send Invite</button>
+    </div>
   </div>
 </div>
 
@@ -772,6 +825,7 @@ function toggleSignup(){
 }
 
 async function doLogin(){
+  if(_recoveryMode){return setRecoveryPassword();}
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginErr');
@@ -810,8 +864,42 @@ async function doLogin(){
 document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   document.getElementById('loginEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+  // Listen for password recovery (invite link clicked)
+  _sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      _recoveryMode=true;
+      document.getElementById('loginTitle').textContent='Set Your Password';
+      document.getElementById('loginSub').textContent='Welcome to Dealership Accelerator! Choose a password for your account.';
+      document.getElementById('loginEmail').value=session?.user?.email||'';
+      document.getElementById('loginEmail').readOnly=true;
+      document.getElementById('loginEmail').style.opacity='.6';
+      document.getElementById('loginBtn').textContent='Set Password';
+      document.getElementById('loginToggle').style.display='none';
+      document.getElementById('loginPass').placeholder='Choose a password (6+ chars)';
+      document.getElementById('loginPass').value='';
+      document.getElementById('loginPass').focus();
+    }
+  });
   checkSession();
 });
+
+let _recoveryMode=false;
+
+async function setRecoveryPassword(){
+  const pass=document.getElementById('loginPass').value;
+  const errEl=document.getElementById('loginErr');
+  const btn=document.getElementById('loginBtn');
+  errEl.style.display='none';
+  if(pass.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Setting password...';
+  try{
+    const{error}=await _sb.auth.updateUser({password:pass});
+    if(error)throw error;
+    _recoveryMode=false;
+    const{data:{session}}=await _sb.auth.getSession();
+    if(session?.user){_currentUser=session.user;await enterApp();}
+  }catch(e){errEl.textContent=e.message||'Failed to set password.';errEl.style.display='block';btn.disabled=false;btn.textContent='Set Password';}
+}
 
 async function checkSession(){
   const { data:{ session } } = await _sb.auth.getSession();
@@ -852,17 +940,22 @@ async function doLogout(){
 }
 
 // ─── ADMIN DASHBOARD ───
+function getRoleLabel(p){if(p.role)return p.role;return p.is_admin?'admin':'sales_rep';}
+function roleBadgeClass(role){if(role==='admin')return'admin-badge';if(role==='sdr')return'admin-badge sdr';return'admin-badge rep';}
+function roleDisplay(role){if(role==='admin')return'Admin';if(role==='sdr')return'SDR';return'Sales Rep';}
+
 async function loadAdminDashboard(){
-  const { data: profiles } = await _sb.from('profiles').select('id, email, is_admin, created_at').order('created_at', { ascending: true });
+  const { data: profiles } = await _sb.from('profiles').select('*').order('created_at', { ascending: true });
   if(!profiles) return;
   const { data: allComm } = await _sb.from('commission_data').select('user_id, state, updated_at');
   const commMap = {};
   (allComm||[]).forEach(c => { commMap[c.user_id] = c; });
-  const admins = profiles.filter(p => p.is_admin).length;
-  const reps = profiles.length - admins;
+  let admins=0,reps=0,sdrs=0;
+  profiles.forEach(p=>{const r=getRoleLabel(p);if(r==='admin')admins++;else if(r==='sdr')sdrs++;else reps++;});
   document.getElementById('adStatUsers').textContent = profiles.length;
   document.getElementById('adStatAdmins').textContent = admins;
   document.getElementById('adStatReps').textContent = reps;
+  document.getElementById('adStatSDRs').textContent = sdrs;
   const list = document.getElementById('adminUserList');
   list.innerHTML = '';
   profiles.forEach(p => {
@@ -871,6 +964,7 @@ async function loadAdminDashboard(){
     const hasData = comm && comm.state && Object.keys(comm.state).length > 0;
     const updated = comm?.updated_at ? new Date(comm.updated_at).toLocaleDateString() : 'Never';
     const isMe = p.id === _currentUser.id;
+    const role = getRoleLabel(p);
     const div = document.createElement('div');
     div.className = 'admin-user';
     div.innerHTML =
@@ -882,19 +976,97 @@ async function loadAdminDashboard(){
         '</div>'+
       '</div>'+
       '<div class="admin-user-right">'+
-        '<span class="admin-badge'+(p.is_admin?'':' rep')+'">'+(p.is_admin?'Admin':'Rep')+'</span>'+
-        (!isMe?'<button class="admin-toggle-btn" data-uid="'+p.id+'" data-admin="'+(p.is_admin?'1':'0')+'" onclick="toggleAdmin(this)">'+(p.is_admin?'Remove Admin':'Make Admin')+'</button>':'')+
+        '<span class="'+roleBadgeClass(role)+'">'+roleDisplay(role)+'</span>'+
+        (!isMe?'<select class="admin-role-sel" data-uid="'+p.id+'" onchange="changeRole(this)">'+
+          '<option value="sales_rep"'+(role==='sales_rep'?' selected':'')+'>Sales Rep</option>'+
+          '<option value="sdr"'+(role==='sdr'?' selected':'')+'>SDR</option>'+
+          '<option value="admin"'+(role==='admin'?' selected':'')+'>Admin</option>'+
+        '</select>':'')+
         '<button class="admin-view-btn" onclick="viewUserTracker(\''+p.id+'\',\''+esc(p.email)+'\')">View Tracker</button>'+
       '</div>';
     list.appendChild(div);
   });
 }
 
-async function toggleAdmin(btn){
-  const uid = btn.dataset.uid;const wasAdmin = btn.dataset.admin === '1';const newVal = !wasAdmin;
-  btn.textContent = 'Saving...';btn.disabled = true;
-  await _sb.from('profiles').update({ is_admin: newVal }).eq('id', uid);
+async function changeRole(sel){
+  const uid = sel.dataset.uid;const newRole = sel.value;
+  const isAdmin = newRole === 'admin';
+  sel.disabled = true;
+  try {
+    await _sb.from('profiles').update({ is_admin: isAdmin, role: newRole }).eq('id', uid);
+  } catch(e){
+    // If role column doesn't exist, fall back to just is_admin
+    await _sb.from('profiles').update({ is_admin: isAdmin }).eq('id', uid);
+  }
   await loadAdminDashboard();
+}
+
+// ─── INVITE STAFF ───
+function showInviteModal(){
+  document.getElementById('inviteEmail').value='';
+  document.getElementById('inviteRole').value='sales_rep';
+  document.getElementById('inviteErr').style.display='none';
+  document.getElementById('inviteOk').style.display='none';
+  document.getElementById('inviteBtn').disabled=false;
+  document.getElementById('inviteBtn').textContent='Send Invite';
+  document.getElementById('inviteModal').classList.add('show');
+  setTimeout(()=>document.getElementById('inviteEmail').focus(),100);
+}
+function closeInviteModal(){document.getElementById('inviteModal').classList.remove('show');}
+
+async function doInviteStaff(){
+  const email=document.getElementById('inviteEmail').value.trim().toLowerCase();
+  const role=document.getElementById('inviteRole').value;
+  const errEl=document.getElementById('inviteErr');
+  const okEl=document.getElementById('inviteOk');
+  const btn=document.getElementById('inviteBtn');
+  errEl.style.display='none';okEl.style.display='none';
+  if(!email||!email.includes('@')){errEl.textContent='Please enter a valid email.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Sending...';
+  try{
+    // Create a separate client for signUp so we don't affect admin session
+    const inviteSb=window.supabase.createClient(
+      'https://ygoorvnvwvdygqprkxyf.supabase.co',
+      'sb_publishable_kpKWMM2uJgrGSqS_W1CKLQ_uufpskfq',
+      {auth:{autoRefreshToken:false,persistSession:false,detectSessionInUrl:false}}
+    );
+    // Generate temp password (user will reset via email)
+    const tempPw='DA_'+crypto.randomUUID().slice(0,16)+'!';
+    const isAdmin=role==='admin';
+    // Create the user account
+    const{data:signUpData,error:signUpErr}=await inviteSb.auth.signUp({
+      email,password:tempPw,
+      options:{data:{role,invited_by:_currentUser.email}}
+    });
+    if(signUpErr)throw signUpErr;
+    if(signUpData?.user?.identities?.length===0){
+      errEl.textContent='An account with this email already exists.';errEl.style.display='block';
+      btn.disabled=false;btn.textContent='Send Invite';return;
+    }
+    const newUid=signUpData?.user?.id;
+    // Set profile row with role
+    if(newUid){
+      try{
+        await _sb.from('profiles').upsert({id:newUid,email,is_admin:isAdmin,role},{onConflict:'id'});
+      }catch(e){
+        // Fall back if role column doesn't exist
+        await _sb.from('profiles').upsert({id:newUid,email,is_admin:isAdmin},{onConflict:'id'});
+      }
+    }
+    // Send password reset email so they can set their own password
+    const redirectUrl=window.location.origin+window.location.pathname;
+    await _sb.auth.resetPasswordForEmail(email,{redirectTo:redirectUrl});
+    okEl.innerHTML='Invite sent to <b>'+esc(email)+'</b>. They\'ll receive an email to set their password.';
+    okEl.style.display='block';
+    btn.textContent='Sent!';
+    // Refresh the dashboard
+    await loadAdminDashboard();
+    // Reset form for another invite
+    setTimeout(()=>{btn.disabled=false;btn.textContent='Send Another';document.getElementById('inviteEmail').value='';},1500);
+  }catch(e){
+    errEl.textContent=e.message||'Failed to create account.';errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Send Invite';
+  }
 }
 
 async function viewUserTracker(userId, email){
